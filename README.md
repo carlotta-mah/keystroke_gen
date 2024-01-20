@@ -1,2 +1,5 @@
 # keystroke_gen
-Machine learning models to generate and discriminate keystroke dynamics
+In this repository I create machine learning models to generate and discriminate keystroke dynamics.
+
+Language: Python
+Degree Progam: Computer science (M.Sc)
