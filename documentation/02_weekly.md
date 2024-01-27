@@ -5,6 +5,7 @@ I also took time to implement testing and documentation, as well as an automatic
 ## How has the project progressed?
 I can now read data (data files not included in git) and preprocess it. 
 I started a CI pipeline.
+I added test coverage too coverage.py and testing framework pytest
 
 ## What did I learn this week?
 I read up on feature scaling. Also, I learned about data handling in python. Finally, I set up my first CI pipeline! 

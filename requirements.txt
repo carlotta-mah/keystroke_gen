@@ -2,5 +2,6 @@
 pytest
 pandas
 scikit-learn
+coverage
 # if you get an error during bertopic pip install try: conda install -c conda-forge hdbscan
 
