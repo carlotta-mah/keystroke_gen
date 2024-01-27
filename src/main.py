@@ -11,7 +11,7 @@ def read_keystroke_data(file_pattern, limit=None):
     columns_to_keep = ['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE', 'USER_INPUT']
 
     # Find files matching the specified pattern
-    file_list = glob.glob("../data/Keystrokes/files/" + file_pattern)
+    file_list = glob.glob(file_pattern)
     file_list = file_list[:limit or len(file_list)]
 
     # Initialize an empty list to store DataFrames
@@ -60,11 +60,11 @@ if __name__ == "__main__":
 
     #if filename is number process number files
     if filespec.isdigit():
-        file_pattern = '????_keystrokes.txt'
+        file_pattern = '"../data/Keystrokes/files/????_keystrokes.txt'
         df = read_keystroke_data(file_pattern, filespec)
     else:
         try:
-            df = read_keystroke_data(filespec)
+            df = read_keystroke_data("../data/Keystrokes/files/" + filespec) #todo: add path before block
         except FileNotFoundError:
             print("File not found:", filespec)
         except Exception as e:
