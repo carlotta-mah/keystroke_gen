@@ -8,14 +8,15 @@ import numpy as np
 
 
 class NeuralNetwork:
-    def __init__(self, layer_sizes, learning_rate=0.01):
-        self.layer_sizes = layer_sizes
-        self.layer_count = len(layer_sizes)
+    def __init__(self, input_size, hidden_layer_sizes, output_size=1, learning_rate=0.01):
+        self.layer_sizes = [input_size] + hidden_layer_sizes + [output_size]
+        self.layer_count = len(hidden_layer_sizes) + 2
 
         # zero bias for each layer
-        self.biases = [np.zeros((1, layer_sizes[i + 1])) for i in range(self.layer_count - 1)]
+        self.biases = [np.zeros((1, self.layer_sizes[i + 1])) for i in range(self.layer_count - 1)]
+
         # random weights for each layer
-        self.weights = [np.random.randn(layer_sizes[i], layer_sizes[i + 1]) for i in range(self.layer_count - 1)]
+        self.weights = [np.random.randn(self.layer_sizes[i], self.layer_sizes[i + 1]) for i in range(self.layer_count - 1)]
         self.learning_rate = learning_rate
 
     def sigmoid(self, x):
@@ -40,7 +41,7 @@ class NeuralNetwork:
         return activations
 
     # Backpropagation: figure out how bad hypothesis (each assigned weight) is -> derive E
-    def backward(self, X, y, activations):
+    def backward(self, y, activations):
 
         # deltas: Gradients of the loss function
         deltas = [None] * (self.layer_count - 1)
@@ -64,7 +65,7 @@ class NeuralNetwork:
         for epoch in range(epochs):
             try:
                 activations = self.forward(X)
-                self.backward(X, y, activations)
+                self.backward(y, activations)
 
                 # Every 100 epochs, print loss.
                 if epoch % 100 == 0:
@@ -82,10 +83,10 @@ class NeuralNetwork:
 if __name__ == "__main__":
     # Example usage
     # Number of neurons in each layer
-    layers_size = [4, 5, 3, 2]
+    hidden_layers_size = [4, 5, 3, 2]
 
     # Create a neural network
-    nn = NeuralNetwork(layers_size)
+    nn = NeuralNetwork(4, hidden_layers_size)
 
     # Generate some dummy data
     X = np.random.randn(100, 4)
