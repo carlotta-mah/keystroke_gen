@@ -1,4 +1,4 @@
-# Weekly Report 01
+# Weekly Report 03
 ## What did I do this week?
 I took time to acquire, inspect and analyze the data. Then I programmed the data preprocessing and feature engineering.
 I also took time to implement testing and documentation, as well as an automatic testing pipeline which will run as soon as I merge to main.
