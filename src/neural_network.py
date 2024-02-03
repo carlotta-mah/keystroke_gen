@@ -8,11 +8,14 @@ import numpy as np
 
 
 class NeuralNetwork:
-    def __init__(self, input_size, hidden_size, output_size, learning_rate=0.01):
-        self.weights_input_hidden = np.random.randn(input_size, hidden_size)
-        self.bias_input_hidden = np.zeros((1, hidden_size))
-        self.weights_hidden_output = np.random.randn(hidden_size, output_size)
-        self.bias_hidden_output = np.zeros((1, output_size))
+    def __init__(self, layer_sizes, learning_rate=0.01):
+        self.layer_sizes = layer_sizes
+        self.layer_count = len(layer_sizes)
+
+        # zero bias for each layer
+        self.biases = [np.zeros((1, layer_sizes[i + 1])) for i in range(self.layer_count - 1)]
+        # random weights for each layer
+        self.weights = [np.random.randn(layer_sizes[i], layer_sizes[i + 1]) for i in range(self.layer_count - 1)]
         self.learning_rate = learning_rate
 
     def sigmoid(self, x):
@@ -21,62 +24,77 @@ class NeuralNetwork:
     def sigmoid_derivative(self, x):
         return x * (1 - x)
 
+    # Propagate the input data through the neural network, compute predictions
+    # X is the input matrix
+    # returns all activations
     def forward(self, X):
-        # Forward pass from input to hidden layer
-        self.hidden_output = self.sigmoid(np.dot(X, self.weights_input_hidden) + self.bias_input_hidden)
+        # list containing the activations of each layer
+        activations = [X]
+        # Compute the weighted sum of inputs for each layer except output layer
+        for i in range(self.layer_count - 1):
+            # multiply activation of previous layer with weights, add bias
+            z = np.dot(activations[-1], self.weights[i]) + self.biases[i]
+            # apply activation function
+            activations.append(self.sigmoid(z))
 
-        # Forward pass from hidden to output layer
-        self.predictions = self.sigmoid(
-            np.dot(self.hidden_output, self.weights_hidden_output) + self.bias_hidden_output)
+        return activations
 
-        return self.predictions
+    # Backpropagation: figure out how bad hypothesis (each assigned weight) is -> derive E
+    def backward(self, X, y, activations):
 
-    def backward(self, X, y):
-        # Compute error
-        error = y - self.predictions
+        # deltas: Gradients of the loss function
+        deltas = [None] * (self.layer_count - 1)
 
-        # Compute gradients for the output layer
-        delta_output = error * self.sigmoid_derivative(self.predictions)
+        # Initialize backpropagation mechanism with derivative of last layer activation
+        last_activation = activations[-1]
+        deltas[-1] = (last_activation - y) * self.sigmoid_derivative(last_activation)
 
-        # Compute gradients for the hidden layer
-        error_hidden = delta_output.dot(self.weights_hidden_output.T)
-        delta_hidden = error_hidden * self.sigmoid_derivative(self.hidden_output)
+        for i in reversed(range(1, self.layer_count - 1)):
+            deltas[i - 1] = np.dot(deltas[i], self.weights[i].T) * self.sigmoid_derivative(activations[i])
 
         # Update weights and biases
-        self.weights_hidden_output += self.hidden_output.T.dot(delta_output) * self.learning_rate
-        self.bias_hidden_output += np.sum(delta_output, axis=0, keepdims=True) * self.learning_rate
-        self.weights_input_hidden += X.T.dot(delta_hidden) * self.learning_rate
-        self.bias_input_hidden += np.sum(delta_hidden, axis=0, keepdims=True) * self.learning_rate
+        for i in range(self.layer_count - 1):
+            self.weights[i] -= self.learning_rate * np.dot(activations[i].T, deltas[i])
+            self.biases[i] -= self.learning_rate * np.sum(deltas[i], axis=0)
 
     def train(self, X, y, epochs):
+        if X.shape[1] != self.layer_sizes[0]:
+            raise ValueError("Number of features in X does not match the size of the input layer.")
+
         for epoch in range(epochs):
+            try:
+                activations = self.forward(X)
+                self.backward(X, y, activations)
 
-            predictions = self.forward(X)
-            self.backward(X, y)
+                # Every 100 epochs, print loss.
+                if epoch % 100 == 0:
+                    loss = np.mean(np.square(y - activations[-1]))
+                    print(f'Epoch {epoch}, Loss: {loss}')
+            except ValueError as e:
+                print("error!", epoch)
+                raise ValueError("failed here: ", epoch, e)
 
-            if epoch % 100 == 0:
-                loss = np.mean(np.square(y - predictions))
-                print(f'Epoch {epoch}, Loss: {loss}')
+    def get_prediction(self, X):
+        activations = self.forward(X)
+        return activations[-1]
 
 
 if __name__ == "__main__":
     # Example usage
-    # Define input, output, and hidden layer sizes
-    input_size = 2
-    hidden_size = 3
-    output_size = 1
+    # Number of neurons in each layer
+    layers_size = [4, 5, 3, 2]
 
     # Create a neural network
-    nn = NeuralNetwork(input_size, hidden_size, output_size)
+    nn = NeuralNetwork(layers_size)
 
     # Generate some dummy data
-    X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-    y = np.array([[0], [1], [1], [0]])
+    X = np.random.randn(100, 4)
+    y = np.random.randint(0, 2, (100, 1))
 
     # Train the neural network
     nn.train(X, y, epochs=1000)
 
     # Make predictions
-    predictions = nn.forward(X)
+    prediction = nn.get_prediction(X)
     print("Predictions:")
-    print(predictions)
+    print(prediction)
