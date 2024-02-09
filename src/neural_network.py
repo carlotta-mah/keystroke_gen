@@ -81,21 +81,46 @@ class NeuralNetwork:
 
 
 if __name__ == "__main__":
-    # Example usage
-    # Number of neurons in each layer
-    hidden_layers_size = [4, 5, 3, 2]
+    # Generate synthetic keystroke data
+    num_samples = 1000
+    num_features = 10
+    num_users = 5
 
-    # Create a neural network
-    nn = NeuralNetwork(4, hidden_layers_size)
+    # Generate random keystroke data (binary features)
+    X_train = np.random.randint(0, 2, size=(num_samples, num_features))
 
-    # Generate some dummy data
-    X = np.random.randn(100, 4)
-    y = np.random.randint(0, 2, (100, 1))
+    # Generate random user labels
+    y_train = np.random.randint(0, num_users, size=num_samples)
 
-    # Train the neural network
-    nn.train(X, y, epochs=1000)
 
-    # Make predictions
-    prediction = nn.get_prediction(X)
-    print("Predictions:")
-    print(prediction)
+    # Convert labels to one-hot encoding
+    def one_hot_encode(labels, num_classes):
+        encoded_labels = np.zeros((len(labels), num_classes))
+        for i, label in enumerate(labels):
+            encoded_labels[i, label] = 1
+        return encoded_labels
+
+
+    y_train_one_hot = one_hot_encode(y_train, num_users)
+
+    # Normalize the input data (optional)
+    # X_train = X_train / np.max(X_train, axis=0)
+
+    # Import the NeuralNetwork class
+    # Paste the NeuralNetwork class implementation here
+
+    # Define dimensions
+    input_size = num_features
+    hidden_size = 64
+    output_size = num_users
+
+    # Create an instance of the NeuralNetwork class
+    model = NeuralNetwork(input_size, [hidden_size], output_size, learning_rate=0.01)
+
+    # Train the model
+    epochs = 1000
+    model.train(X_train, y_train_one_hot, epochs)
+
+    # Testing
+    # Assuming you have some test data X_test
+    # predictions = model.forward(X_test)
