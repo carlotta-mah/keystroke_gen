@@ -1,5 +1,5 @@
 """ Class implementing a neural network.
- With one hidden layer using the sigmoid activation function.
+ With layers using the sigmoid activation function.
  We initialize random weights and biases.
  Then it trains the network using backpropagation with gradient descent.
  Finally, it makes predictions using the trained neural network."""
@@ -11,13 +11,13 @@ class NeuralNetwork:
     def __init__(self, input_size, hidden_layer_sizes, output_size=1, learning_rate=0.01):
         self.layer_sizes = [input_size] + hidden_layer_sizes + [output_size]
         self.layer_count = len(hidden_layer_sizes) + 2
-
-        # zero bias for each layer
-        self.biases = [np.zeros((1, self.layer_sizes[i + 1])) for i in range(self.layer_count - 1)]
-
-        # random weights for each layer
-        self.weights = [np.random.randn(self.layer_sizes[i], self.layer_sizes[i + 1]) for i in range(self.layer_count - 1)]
+        self._initialize_weights_and_biases()
         self.learning_rate = learning_rate
+
+    def _initialize_weights_and_biases(self):
+        self.biases = [np.zeros((1, size)) for size in self.layer_sizes[1:]]
+        self.weights = [np.random.randn(prev, current) for prev, current in
+                        zip(self.layer_sizes[:-1], self.layer_sizes[1:])]
 
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
