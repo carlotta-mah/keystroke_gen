@@ -8,19 +8,27 @@ import numpy as np
 
 
 class NeuralNetwork:
-    def __init__(self, input_size, hidden_layer_sizes, output_size=1, learning_rate=0.01):
+    def __init__(self, input_size, hidden_layer_sizes, output_size=1, learning_rate=0.01, activation='sigmoid'):
         self.layer_sizes = [input_size] + hidden_layer_sizes + [output_size]
         self.layer_count = len(hidden_layer_sizes) + 2
         self._initialize_weights_and_biases()
         self.learning_rate = learning_rate
+        self.activation = activation
 
     def _initialize_weights_and_biases(self):
         self.biases = [np.zeros((1, size)) for size in self.layer_sizes[1:]]
         self.weights = [np.random.randn(prev, current) for prev, current in
                         zip(self.layer_sizes[:-1], self.layer_sizes[1:])]
 
-    def sigmoid(self, x):
-        return 1 / (1 + np.exp(-x))
+    def _activation_function(self, x):
+        if self.activation == 'sigmoid':
+            return 1 / (1 + np.exp(-x))
+        elif self.activation == 'relu':
+            return np.maximum(0, x)
+        elif self.activation == 'tanh':
+            return np.tanh(x)
+        else:
+            raise ValueError("Invalid activation function. Choose from 'sigmoid', 'relu', or 'tanh'.")
 
     def sigmoid_derivative(self, x):
         return x * (1 - x)
@@ -36,7 +44,7 @@ class NeuralNetwork:
             # multiply activation of previous layer with weights, add bias
             z = np.dot(activations[-1], self.weights[i]) + self.biases[i]
             # apply activation function
-            activations.append(self.sigmoid(z))
+            activations.append(self._activation_function(z))
 
         return activations
 
