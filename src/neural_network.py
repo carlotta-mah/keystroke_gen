@@ -30,9 +30,13 @@ class NeuralNetwork:
         else:
             raise ValueError("Invalid activation function. Choose from 'sigmoid', 'relu', or 'tanh'.")
 
-    def sigmoid_derivative(self, x):
-        return x * (1 - x)
-
+    def _activation_derivative(self, x):
+        if self.activation == 'sigmoid':
+            return x * (1 - x)
+        elif self.activation == 'relu':
+            return np.where(x > 0, 1, 0)
+        elif self.activation == 'tanh':
+            return 1 - np.power(x, 2)
     # Propagate the input data through the neural network, compute predictions
     # X is the input matrix
     # returns all activations
@@ -56,10 +60,10 @@ class NeuralNetwork:
 
         # Initialize backpropagation mechanism with derivative of last layer activation
         last_activation = activations[-1]
-        deltas[-1] = (last_activation - y) * self.sigmoid_derivative(last_activation)
+        deltas[-1] = (last_activation - y) * self._activation_derivative(last_activation)
 
         for i in reversed(range(1, self.layer_count - 1)):
-            deltas[i - 1] = np.dot(deltas[i], self.weights[i].T) * self.sigmoid_derivative(activations[i])
+            deltas[i - 1] = np.dot(deltas[i], self.weights[i].T) * self._activation_derivative(activations[i])
 
         # Update weights and biases
         for i in range(self.layer_count - 1):
