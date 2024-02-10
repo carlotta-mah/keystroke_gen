@@ -8,7 +8,7 @@ from src.data_reader import preprocess_data
 
 
 def test_read_keystroke_data():
-    filename = 'test_data_reader.txt'
+    filename = 'test_data.txt'
     df = read_keystroke_data(filename)
     assert len(df) == 25
     assert len(df.iloc[0]) == 5
