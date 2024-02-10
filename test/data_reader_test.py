@@ -3,8 +3,8 @@ import pandas as pd
 # tests for all the functions in the program
 
 # imports for testing module in main
-from src.data_reader import read_keystroke_data
-from src.data_reader import preprocess_data
+from src.data_processor import read_keystroke_data
+from src.data_processor import preprocess_data
 
 
 def test_read_keystroke_data():
