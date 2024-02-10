@@ -18,9 +18,11 @@ def read_keystroke_data(pattern, limit=None):
     file_list = glob.glob(pattern)
     file_list = file_list[:limit or len(file_list)]
 
+    keystroke_df = [pd.read_csv(file, sep='\t', usecols=columns_to_keep, parse_dates={'SEQUENCE_ID': ['PARTICIPANT_ID', 'TEST_SECTION_ID']})
+                              for file in file_list]
+    print(keystroke_df)
     keystroke_df = pd.concat([pd.read_csv(file, sep='\t', usecols=columns_to_keep, parse_dates={'SEQUENCE_ID': ['PARTICIPANT_ID', 'TEST_SECTION_ID']})
                               for file in file_list], ignore_index=True)
-    print(keystroke_df)
     return keystroke_df
 
 
