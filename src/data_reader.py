@@ -7,22 +7,25 @@ from sklearn.model_selection import train_test_split
 
 
 # Step 1: Load the data
-def read_keystroke_data(file_pattern, limit=None):
-    if file_pattern is None: file = '*_keystrokes.txt'
+def read_keystroke_data(pattern, limit=None):
+    if pattern is None:
+        file = '*_keystrokes.txt'
 
     # columns that we want to process
     columns_to_keep = ['PARTICIPANT_ID', 'PRESS_TIME', 'RELEASE_TIME', 'KEYCODE', 'USER_INPUT']
 
     # Find files matching the specified pattern
-    file_list = glob.glob(file_pattern)
+    file_list = glob.glob(pattern)
     file_list = file_list[:limit or len(file_list)]
 
-    df = pd.concat([pd.read_csv(file, sep='\t', usecols=columns_to_keep,  parse_dates={'SEQUENCE_ID': ['PARTICIPANT_ID', 'TEST_SECTION_ID']})
-                    for file in file_list], ignore_index=True)
-    return df
+    keystroke_df = pd.concat([pd.read_csv(file, sep='\t', usecols=columns_to_keep, parse_dates={'SEQUENCE_ID': ['PARTICIPANT_ID', 'TEST_SECTION_ID']})
+                              for file in file_list], ignore_index=True)
+    print(keystroke_df)
+    return keystroke_df
 
 
 # Step 2: Data preprocessing
+# todo: encoding in sequences
 def preprocess_data(keystroke_df):
     # Convert timestamps to milliseconds
     keystroke_df['PRESS_TIME'] = pd.to_numeric(keystroke_df['PRESS_TIME'], errors='coerce')
