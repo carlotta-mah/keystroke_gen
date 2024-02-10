@@ -12,7 +12,7 @@ def read_keystroke_data(pattern, limit=None):
         file = '*_keystrokes.txt'
 
     # columns that we want to process
-    columns_to_keep = ['PARTICIPANT_ID', 'PRESS_TIME', 'RELEASE_TIME', 'KEYCODE', 'USER_INPUT']
+    columns_to_keep = ['PARTICIPANT_ID', 'TEST_SECTION_ID', 'PRESS_TIME', 'RELEASE_TIME', 'KEYCODE', 'USER_INPUT']
 
     # Find files matching the specified pattern
     file_list = glob.glob(pattern)
