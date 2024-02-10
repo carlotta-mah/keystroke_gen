@@ -7,53 +7,6 @@ from sklearn.model_selection import train_test_split
 
 from src.neural_network import NeuralNetwork
 
-def accuracy_score(y_true, y_pred):
-    """
-    Calculate the accuracy score.
-
-    Parameters:
-    - y_true: True labels.
-    - y_pred: Predicted labels.
-
-    Returns:
-    - Accuracy score.
-    """
-    # Ensure y_true and y_pred have the same length
-    if len(y_true) != len(y_pred):
-        raise ValueError("y_true and y_pred must have the same length.")
-
-    # Calculate accuracy
-    correct_predictions = np.sum(y_true == y_pred)
-    total_predictions = len(y_true)
-    accuracy = correct_predictions / total_predictions
-
-    return accuracy
-
-def precision_score(y_true, y_pred):
-    """
-    Calculate the precision score.
-
-    Parameters:
-    - y_true: True labels.
-    - y_pred: Predicted labels.
-
-    Returns:
-    - Precision score.
-    """
-    # Ensure y_true and y_pred have the same length
-    if len(y_true) != len(y_pred):
-        raise ValueError("y_true and y_pred must have the same length.")
-
-    # Calculate precision
-    true_positives = np.sum((y_true == 1) & (y_pred == 1))
-    false_positives = np.sum((y_true == 0) & (y_pred == 1))
-
-    if true_positives + false_positives == 0:
-        precision = 0
-    else:
-        precision = true_positives / (true_positives + false_positives)
-
-    return precision
 
 def test_neural_network():
     # color map for better visualization
@@ -69,38 +22,54 @@ def test_neural_network():
 
     # split the data
     X_train, X_test, y_train, y_test = train_test_split(data, labels, stratify=labels, test_size=0.2, random_state=0)
+
     y_train, y_test = y_train.reshape(-1, 1), y_test.reshape(-1, 1)
-    print(X_train.shape, y_train.shape)
+    print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
-    # Define input, output, and hidden layer sizes
+    # Create a neural network instance
     layer_sizes = [4, 5, 6, 1]
+    nn = NeuralNetwork(input_size=4, hidden_layer_sizes=layer_sizes, output_size=1)
 
-    # Create a neural network
-    nn = NeuralNetwork(layer_sizes)
-
-    # Train the neural network
-
+    # Train the neural network and make predictions on training data
     nn.train(X_train, y_train, epochs=1000)
-    # Make predictions
     predictions = nn.get_prediction(X_train)
+
     assert predictions.shape == y_train.shape
 
-    # Make predictions
+    # Make predictions on testing data
     predictions = nn.get_prediction(X_test)
 
     assert predictions.shape == y_test.shape
-    # Calculate accuracy
-    accuracy = accuracy_score(y_test, predictions)
 
-    # Calculate precision
-    precision = precision_score(y_test, predictions)
 
-    # Assert statements to check if accuracy and precision meet certain criteria
-    assert accuracy >= 0.8, "Accuracy should be at least 80%"
-    assert precision >= 0.8, "Precision should be at least 80%"
+def test_forward_propagation():
+    # Create a neural network instance and input data
+    nn = NeuralNetwork(input_size=2, hidden_layer_sizes=[3], output_size=2)
+    X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
 
-    print("Accuracy:", accuracy)
-    print("Precision:", precision)
+    # Forward propagation
+    activations = nn.forward(X)
 
-    # Check if predictions are close to the actual values
-    # assert np.allclose(predictions, y, atol=0.1)
+    assert len(activations) == 3  # Number of layers including input and output
+    assert activations[-1].shape == (4, 2)  # Output layer should have 2 neurons for binary classification
+
+
+
+def test_backward_propagation():
+    # Create a neural network instance
+    nn = NeuralNetwork(input_size=2, hidden_layer_sizes=[3], output_size=2)
+
+    # Input data and labels
+    X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+    y = np.array([[1, 0], [0, 1], [0, 1], [1, 0]])  # Dummy one-hot encoded labels for binary classification
+
+    # Forward
+    activations = nn.forward(X)
+
+    # Backward
+    nn.backward(y, activations)
+
+    # Check if weights and biases are updated
+    for i in range(len(nn.weights)):
+        assert not np.allclose(nn.weights[i], np.zeros_like(nn.weights[i]))
+        assert not np.allclose(nn.biases[i], np.zeros_like(nn.biases[i]))

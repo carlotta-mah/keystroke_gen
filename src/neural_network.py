@@ -37,6 +37,7 @@ class NeuralNetwork:
             return np.where(x > 0, 1, 0)
         elif self.activation == 'tanh':
             return 1 - np.power(x, 2)
+
     # Propagate the input data through the neural network, compute predictions
     # X is the input matrix
     # returns all activations
@@ -104,7 +105,6 @@ if __name__ == "__main__":
     # Generate random user labels
     y_train = np.random.randint(0, num_users, size=num_samples)
 
-
     # Convert labels to one-hot encoding
     def one_hot_encode(labels, num_classes):
         encoded_labels = np.zeros((len(labels), num_classes))
@@ -112,14 +112,7 @@ if __name__ == "__main__":
             encoded_labels[i, label] = 1
         return encoded_labels
 
-
     y_train_one_hot = one_hot_encode(y_train, num_users)
-
-    # Normalize the input data (optional)
-    # X_train = X_train / np.max(X_train, axis=0)
-
-    # Import the NeuralNetwork class
-    # Paste the NeuralNetwork class implementation here
 
     # Define dimensions
     input_size = num_features

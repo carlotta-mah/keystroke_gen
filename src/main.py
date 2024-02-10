@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 # Step 1: Load the data
 def read_keystroke_data(file_pattern, limit=None):
     # columns that we want to process
-    columns_to_keep = ['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE', 'USER_INPUT']
+    columns_to_keep = ['PARTICIPANT_ID', 'PRESS_TIME', 'RELEASE_TIME', 'KEYCODE', 'USER_INPUT']
 
     # Find files matching the specified pattern
     file_list = glob.glob(file_pattern)
@@ -22,7 +22,7 @@ def read_keystroke_data(file_pattern, limit=None):
         df = pd.read_csv(file, sep='\t', usecols=columns_to_keep)
         df_list.append(df)
 
-    return  pd.concat(df_list, ignore_index=True)
+    return pd.concat(df_list, ignore_index=True)
 
 
 # Step 2: Data preprocessing
