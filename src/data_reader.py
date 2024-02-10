@@ -5,8 +5,11 @@ import pandas as pd
 import glob
 from sklearn.model_selection import train_test_split
 
+
 # Step 1: Load the data
 def read_keystroke_data(file_pattern, limit=None):
+    if file_pattern is None: file = '*_keystrokes.txt'
+
     # columns that we want to process
     columns_to_keep = ['PARTICIPANT_ID', 'PRESS_TIME', 'RELEASE_TIME', 'KEYCODE', 'USER_INPUT']
 
@@ -14,41 +17,37 @@ def read_keystroke_data(file_pattern, limit=None):
     file_list = glob.glob(file_pattern)
     file_list = file_list[:limit or len(file_list)]
 
-    # Initialize an empty list to store DataFrames
-    df_list = []
-
-    # Read data from each file and append to the list
-    for file in file_list:
-        df = pd.read_csv(file, sep='\t', usecols=columns_to_keep)
-        df_list.append(df)
-
-    return pd.concat(df_list, ignore_index=True)
+    df = pd.concat([pd.read_csv(file, sep='\t', usecols=columns_to_keep,  parse_dates={'SEQUENCE_ID': ['PARTICIPANT_ID', 'TEST_SECTION_ID']})
+                    for file in file_list], ignore_index=True)
+    return df
 
 
 # Step 2: Data preprocessing
-def preprocess_data(df):
+def preprocess_data(keystroke_df):
     # Convert timestamps to milliseconds
-    df['PRESS_TIME'] = pd.to_numeric(df['PRESS_TIME'], errors='coerce')
-    df['RELEASE_TIME'] = pd.to_numeric(df['RELEASE_TIME'], errors='coerce')
+    keystroke_df['PRESS_TIME'] = pd.to_numeric(keystroke_df['PRESS_TIME'], errors='coerce')
+    keystroke_df['RELEASE_TIME'] = pd.to_numeric(keystroke_df['RELEASE_TIME'], errors='coerce')
 
     # Drop rows with missing values
-    df = df.dropna()
+    keystroke_df = keystroke_df.dropna()
 
     # Feature scaling
-    df[['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']] = scale_features(df[['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']])
+    keystroke_df[['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']] = scale_features(keystroke_df[['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']])
 
-    return df
+    return keystroke_df
+
 
 # Custom feature scaling function
-def scale_features(df):
+def scale_features(keystroke_df):
     # Calculate mean and standard deviation for each feature
-    mean_values = df.mean()
-    std_values = df.std()
+    mean_values = keystroke_df.mean()
+    std_values = keystroke_df.std()
 
     # Scale each feature
-    scaled_features = (df - mean_values) / std_values
+    scaled_features = (keystroke_df - mean_values) / std_values
 
     return scaled_features
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -58,13 +57,13 @@ if __name__ == "__main__":
     filespec = sys.argv[1]
     df = None
 
-    #if filename is number process number files
+    # if filename is number process number files
     if filespec.isdigit():
         file_pattern = '"../data/Keystrokes/files/????_keystrokes.txt'
         df = read_keystroke_data(file_pattern, filespec)
     else:
         try:
-            df = read_keystroke_data("../data/Keystrokes/files/" + filespec) #todo: add path before block
+            df = read_keystroke_data("../data/Keystrokes/files/" + filespec)  # todo: add path before block
         except FileNotFoundError:
             print("File not found:", filespec)
         except Exception as e:
