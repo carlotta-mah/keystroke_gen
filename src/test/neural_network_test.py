@@ -24,7 +24,6 @@ def test_neural_network():
     X_train, X_test, y_train, y_test = train_test_split(data, labels, stratify=labels, test_size=0.2, random_state=0)
 
     y_train, y_test = y_train.reshape(-1, 1), y_test.reshape(-1, 1)
-    print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
 
     # Create a neural network instance
     layer_sizes = [4, 5, 6, 1]
