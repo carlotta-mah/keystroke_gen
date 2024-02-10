@@ -126,6 +126,3 @@ if __name__ == "__main__":
     epochs = 1000
     model.train(X_train, y_train_one_hot, epochs)
 
-    # Testing
-    # Assuming you have some test data X_test
-    # predictions = model.forward(X_test)
