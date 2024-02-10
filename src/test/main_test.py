@@ -10,7 +10,7 @@ def test_read_keystroke_data():
     filename = 'test_data.txt'
     df = read_keystroke_data(filename)
     assert len(df) == 25
-    assert len(df.iloc[0]) == 4
+    assert len(df.iloc[0]) == 5
     assert df.iloc[0]['PRESS_TIME'] == 1476488368032
 
 # test for preprocess_data in main.py
