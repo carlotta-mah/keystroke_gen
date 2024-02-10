@@ -4,7 +4,7 @@ import pandas as pd
 # tests for all the functions in the program
 
 # test for read_keystroke_data in main.py
-from  src.main import read_keystroke_data
+from ..main import read_keystroke_data
 
 def test_read_keystroke_data():
     filename = 'test_data.txt'
