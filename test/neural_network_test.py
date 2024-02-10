@@ -27,7 +27,7 @@ def test_neural_network():
 
     # Create a neural network instance
     layer_sizes = [4, 5, 6, 1]
-    nn = NeuralNetwork(input_size=4, hidden_layer_sizes=layer_sizes, output_size=1)
+    nn = NeuralNetwork(input_size=4, layer_structure=layer_sizes, output_size=1)
 
     # Train the neural network and make predictions on training data
     nn.train(X_train, y_train, epochs=1000)
@@ -43,7 +43,7 @@ def test_neural_network():
 
 def test_forward_propagation():
     # Create a neural network instance and input data
-    nn = NeuralNetwork(input_size=2, hidden_layer_sizes=[3], output_size=2)
+    nn = NeuralNetwork(input_size=2, layer_structure=[3], output_size=2)
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
 
     # Forward propagation
@@ -56,7 +56,7 @@ def test_forward_propagation():
 
 def test_backward_propagation():
     # Create a neural network instance
-    nn = NeuralNetwork(input_size=2, hidden_layer_sizes=[3], output_size=2)
+    nn = NeuralNetwork(input_size=2, layer_structure=[3], output_size=2)
 
     # Input data and labels
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
