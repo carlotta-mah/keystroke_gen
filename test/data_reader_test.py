@@ -30,4 +30,4 @@ def test_preprocess_data():
     df_preprocessed = preprocess_data(df)
 
     # Check if DataFrame matches the expected shape
-    assert df_preprocessed.shape == (2, 10)  # Expected shape after dropping rows with missing values
+    assert df_preprocessed.shape == (2, 11)  # Expected shape after dropping rows with missing values

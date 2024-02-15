@@ -132,6 +132,7 @@ def extract_features(keystrokes_series):
         # Store features in a dictionary
         # todo: select important features
         features = {
+            'PARTICIPANT_ID': group['PARTICIPANT_ID'].values[0],
             'mean_duration': mean_duration,
             'std_duration': std_duration,
             'min_duration': min_duration,

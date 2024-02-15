@@ -136,3 +136,8 @@ class NeuralNetwork:
     def get_prediction(self, X):
         pred, _ = self.forward(X)
         return pred
+
+    def save_model(self, filename):
+        model = {'weights': self.weights, 'biases': self.biases}
+        np.save(filename, model)
+
