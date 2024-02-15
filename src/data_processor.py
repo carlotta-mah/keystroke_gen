@@ -72,6 +72,18 @@ def scale_features(keystroke_df):
     return scaled_features
 
 
+def encode_participant_ids(y: np.ndarray) -> np.ndarray:
+    # Extract unique participant IDs from the second column of y
+    participant_ids = np.unique(y)
+
+    # Create an empty array to store the encoded labels
+    encoded_labels = np.zeros((len(y), len(participant_ids)), dtype=int)
+
+    # Populate the array with one-hot encoded labels
+    for i, participant_id in enumerate(y):
+        encoded_labels[i, int(participant_id)] = 1
+
+    return encoded_labels
 # Function to extract timing and keycode-based features from a series of keystrokes
 def extract_features(keystrokes_series):
     # Group keystrokes by sequence ID
