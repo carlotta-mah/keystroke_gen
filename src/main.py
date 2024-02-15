@@ -29,7 +29,7 @@ def generate_data(size=100000):
     df = pd.DataFrame({'a': a, 'b': b, 'c': c, 'd': d, 'e': e, 'target': target})
     return df
 def run_with_dummy_data():
-    df = generate_data(100)
+    df = generate_data(10000)
 
     # Separate the features and target
     X = df.drop('target', axis=1)
@@ -39,7 +39,7 @@ def run_with_dummy_data():
     X = scaler.fit_transform(X)
 
     # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=22)
     y_train = y_train.to_numpy().reshape(-1, 1)
     y_test = y_test.to_numpy().reshape(-1, 1)
 
