@@ -1,8 +1,10 @@
 # Python package requirements
-pytest
-pandas
-scikit-learn
+pytest~=7.4.4
+pandas~=2.2.0
+scikit-learn~=1.4.0
 coverage
-matplotlib
+matplotlib~=3.8.2
+numpy~=1.26.3
+
 # if you get an error during bertopic pip install try: conda install -c conda-forge hdbscan
 

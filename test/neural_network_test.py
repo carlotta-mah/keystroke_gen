@@ -26,8 +26,8 @@ def test_neural_network():
     y_train, y_test = y_train.reshape(-1, 1), y_test.reshape(-1, 1)
 
     # Create a neural network instance
-    layer_sizes = [4, 5, 6, 1]
-    nn = NeuralNetwork(input_size=4, layer_structure=layer_sizes, output_size=1)
+    layer_structure = [X_train.shape[1], 10, 10, 1]
+    nn = NeuralNetwork(layer_structure, 0.0002, 'sigmoid')
 
     # Train the neural network and make predictions on training data
     nn.train(X_train, y_train, epochs=1000)
@@ -43,30 +43,32 @@ def test_neural_network():
 
 def test_forward_propagation():
     # Create a neural network instance and input data
-    nn = NeuralNetwork(input_size=2, layer_structure=[3], output_size=2)
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+    layer_structure = [X.shape[1], 10, 10, 1]
+    nn = NeuralNetwork(layer_structure, 0.0002, 'sigmoid')
 
     # Forward propagation
-    activations = nn.forward(X)
+    pred, hidden = nn.forward(X)
 
-    assert len(activations) == 3  # Number of layers including input and output
-    assert activations[-1].shape == (4, 2)  # Output layer should have 2 neurons for binary classification
+    assert len(hidden) == 4  # Number of layers
+    assert pred.shape == (4, 1)  # Output layer should have 1 neuron for binary classification
 
 
 
 def test_backward_propagation():
-    # Create a neural network instance
-    nn = NeuralNetwork(input_size=2, layer_structure=[3], output_size=2)
-
     # Input data and labels
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-    y = np.array([[1, 0], [0, 1], [0, 1], [1, 0]])  # Dummy one-hot encoded labels for binary classification
+    y = np.array([[1], [0], [0], [1]])  # Dummy one-hot encoded labels for binary classification
+
+    # Create a neural network instance
+    layer_structure = [X.shape[1], 10, 10, 1]
+    nn = NeuralNetwork(layer_structure, 0.0002, 'sigmoid')
 
     # Forward
-    activations = nn.forward(X)
+    _, hidden = nn.forward(X)
 
     # Backward
-    nn.backward(y, activations)
+    nn.backward(hidden, y)
 
     # Check if weights and biases are updated
     for i in range(len(nn.weights)):
