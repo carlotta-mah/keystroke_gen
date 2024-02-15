@@ -10,6 +10,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 
 def generate_data(size=100000):
+    '''Generate a DataFrame with independent features and a target feature.
+    This function was taken from https://medium.com/@okanyenigun/building-a-neural-network-from-scratch-in-python-a-step-by-step-guide-8f8cab064c8a'''
+
     # Define correlation values
     corr_a = 0.8
     corr_b = 0.4
@@ -49,35 +52,39 @@ def run_with_dummy_data():
     nn.train(X_train, y_train, epochs=1000)
 
     y_pred = nn.get_prediction(X_test)
-    # nn.plot_learning() impleemnt this
+    # nn.plot_learning() TODO: implement plot_learning
 
     print("Test error: ", mean_squared_error(y_test, y_pred))
 
 def run_with_keystroke_data():
     # Load your keystroke data into a DataFrame
-    keystroke_df = data_processor.read_keystroke_data('../data/Keystrokes/files/*_keystrokes.txt', 13)
+    keystroke_df = data_processor.read_keystroke_data('../data/Keystrokes/files/*_keystrokes.txt', 100)
     print(keystroke_df.head())
     df_preprocessed = data_processor.preprocess_data(keystroke_df)
 
     # Extract features and target variable, skip headings
     X = df_preprocessed.drop(columns=['PARTICIPANT_ID', 'SEQUENCE_ID']).values  # Features
     y = (df_preprocessed['PARTICIPANT_ID']).values  # Target labels
+
     # Encode the target variable (SEQUENCE_ID) using LabelEncoder
     label_encoder = LabelEncoder()
     y_encoded = data_processor.encode_participant_ids(label_encoder.fit_transform(y))
-    # data needs to have shape of output
 
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
 
     # Initialize and train the neural network model
     layers = [X_train.shape[1], 63, 3, len(label_encoder.classes_)]
-    nn = NeuralNetwork(layer_structure=layers, learning_rate=0.01)
+    nn = NeuralNetwork(layer_structure=layers, learning_rate=0.0001, activation='softmax')
     nn.train(X_train, y_train, epochs=1000)
+
+    # Get predictions and calculate the mean squared error
+    y_pred = nn.get_prediction(X_test)
+    print("Test error: ", mean_squared_error(y_test, y_pred))
 
 
 if __name__ == "__main__":
-    run_with_dummy_data()
-    # run_with_keystroke_data()
+    # run_with_dummy_data()
+    run_with_keystroke_data()
     print("Done")
 

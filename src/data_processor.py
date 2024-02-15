@@ -8,8 +8,10 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 
 
-# Step 1: Load the data
 def read_keystroke_data(pattern, limit=None):
+    '''Read keystroke data from files matching the specified pattern and return as a DataFrame.'''
+
+    # If no pattern is specified, use the default pattern
     if pattern is None:
         file = '*_keystrokes.txt'
 
@@ -35,6 +37,9 @@ def read_keystroke_data(pattern, limit=None):
 # Step 2: Data preprocessing
 # todo: encoding in sequences
 def preprocess_data(keystroke_df):
+    '''Preprocess keystroke data.
+    Features are scaled and additional features are extracted.'''
+
     # Convert timestamps to milliseconds
     keystroke_df['PRESS_TIME'] = pd.to_numeric(keystroke_df['PRESS_TIME'], errors='coerce')
     keystroke_df['RELEASE_TIME'] = pd.to_numeric(keystroke_df['RELEASE_TIME'], errors='coerce')
@@ -86,11 +91,12 @@ def encode_participant_ids(y: np.ndarray) -> np.ndarray:
     return encoded_labels
 # Function to extract timing and keycode-based features from a series of keystrokes
 def extract_features(keystrokes_series):
+    '''Extract keystroke features from a series of keystrokes.'''
+
     # Group keystrokes by sequence ID
     grouped_df = keystrokes_series.groupby('SEQUENCE_ID')
 
     extracted_features = []
-
     for sequence_id, group in grouped_df:
         # Extract press times, durations, and keycodes for the current sequence ID
         press_times = group['PRESS_TIME'].values
@@ -104,7 +110,8 @@ def extract_features(keystrokes_series):
         durations = release_times - press_times
 
         # Calculate inter-key intervals (time between consecutive key presses)
-        inter_key_intervals = np.diff(press_times)
+        # if there is only one key press, the inter-key interval is 0
+        inter_key_intervals = np.diff(press_times, prepend=0)
 
         # Compute statistical characteristics of durations and inter-key intervals
         mean_duration = np.mean(durations)
@@ -122,12 +129,9 @@ def extract_features(keystrokes_series):
         most_common_keycode = unique_keycodes[np.argmax(counts)]
         num_unique_keycodes = len(unique_keycodes)
 
-        # Additional features can be derived from keycodes, such as frequency, entropy, etc.
-
         # Store features in a dictionary
+        # todo: select important features
         features = {
-            'SEQUENCE_ID': sequence_id,
-            'PARTICIPANT_ID': group['PARTICIPANT_ID'].values[0],
             'mean_duration': mean_duration,
             'std_duration': std_duration,
             'min_duration': min_duration,
@@ -148,10 +152,10 @@ def extract_features(keystrokes_series):
     return extracted_features_df
 
 if __name__ == "__main__":
+    # example usage
     if len(sys.argv) != 2:
         print("Usage: python script.py <filename> or <number of files>")
         sys.exit(1)
-
     filespec = sys.argv[1]
     df = None
 

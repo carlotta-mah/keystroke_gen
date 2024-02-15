@@ -48,6 +48,8 @@ class NeuralNetwork:
             return np.maximum(0, x)
         elif self.activation == 'tanh':
             return np.tanh(x)
+        elif self.activation == 'softmax':
+            return softmax(x)
         else:
             raise ValueError("Invalid activation function. Choose from 'sigmoid', 'relu', or 'tanh'.")
 
@@ -58,6 +60,8 @@ class NeuralNetwork:
             return np.where(x > 0, 1, 0)
         elif self.activation == 'tanh':
             return 1 - np.power(x, 2)
+        elif self.activation == 'softmax':
+            return softmax(x) * (1 - softmax(x))
 
     # Propagate the input data through the neural network, compute predictions
     # X is the input matrix
@@ -74,27 +78,15 @@ class NeuralNetwork:
 
     # Backpropagation: figure out how bad hypothesis (each assigned weight) is -> derive E
     def backward(self, hidden, deltas):
-
-        # deltas: Gradients of the loss function
-        # deltas: np.ndarray = np.zeros(self.layer_count - 1)
-
         for i in reversed(range(1, self.layer_count - 1)):
-        # for i in range(self.layer_count - 2, -1, -1):
             if i != self.layer_count - 2:
-                deltas = np.multiply(deltas, np.heaviside(hidden[i + 1], 0))
+                # Compute the derivative of the activation function
+                activation_derivative = self._activation_derivative(hidden[i + 1])
+                deltas = np.multiply(deltas, activation_derivative)
 
-            # deltas[i - 1] = np.dot(deltas[i], self.weights[i].T) * self._activation_derivative(activations[i])
-
-            weights_grad = hidden[i].T @ deltas
-            new_weight = self.learning_rate * weights_grad
-            self.weights[i] -= new_weight
+            self.weights[i] -= self.learning_rate * np.dot(hidden[i].T, deltas)
             self.biases[i] -= self.learning_rate * np.mean(deltas, axis=0)
             deltas = deltas @ self.weights[i].T
-
-        # Update weights and biases
-        for i in range(self.layer_count - 1):
-            pass
-
         return
 
     def calculate_loss(self, actual: np.ndarray, predicted: np.ndarray):
@@ -109,8 +101,8 @@ class NeuralNetwork:
         # validation split
         X, X_v, y, y_v = train_test_split(X, y, test_size=self._validation_split, random_state=12)
 
-        # indices = np.random.permutation(len(X))
-        # X_shuffled, y_shuffled = X[indices], y[indices]
+        indices = np.random.permutation(len(X))
+        X_shuffled, y_shuffled = X[indices], y[indices]
 
         for epoch in range(epochs):
             # Shuffle the data and divide into mini-batches
@@ -118,8 +110,8 @@ class NeuralNetwork:
             for i in range(0, len(X), self._batch_size):
                 try:
                     # Select mini-batch
-                    x_batch, y_batch = (X[i:i + self._batch_size],
-                                        y[i:i + self._batch_size])
+                    x_batch, y_batch = (X_shuffled[i:i + self._batch_size],
+                                        y_shuffled[i:i + self._batch_size])
                     # Forward pass
                     pred, hidden = self.forward(x_batch)
                     # Calculate loss
