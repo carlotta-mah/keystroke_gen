@@ -59,11 +59,9 @@ def run_with_dummy_data():
 def run_with_keystroke_data():
     # Load your keystroke data into a DataFrame
     keystroke_df = data_processor.read_keystroke_data('../data/Keystrokes/files/*_keystrokes.txt', 100)
-    print(keystroke_df.head())
     df_preprocessed = data_processor.preprocess_data(keystroke_df)
-
     # Extract features and target variable, skip headings
-    X = df_preprocessed.drop(columns=['PARTICIPANT_ID', 'SEQUENCE_ID']).values  # Features
+    X = df_preprocessed.drop(columns='PARTICIPANT_ID').values  # Features
     y = (df_preprocessed['PARTICIPANT_ID']).values  # Target labels
 
     # Encode the target variable (SEQUENCE_ID) using LabelEncoder
@@ -80,11 +78,16 @@ def run_with_keystroke_data():
 
     # Get predictions and calculate the mean squared error
     y_pred = nn.get_prediction(X_test)
+
     print("Test error: ", mean_squared_error(y_test, y_pred))
+
+    #save the model
+    nn.save_model('model.pkl')
 
 
 if __name__ == "__main__":
     # run_with_dummy_data()
     run_with_keystroke_data()
     print("Done")
+
 
