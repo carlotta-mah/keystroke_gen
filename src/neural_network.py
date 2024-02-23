@@ -55,7 +55,8 @@ class NeuralNetwork:
 
     def _activation_derivative(self, x):
         if self.activation == 'sigmoid':
-            return sigmoid(x) * (1 - sigmoid(x))
+            # return sigmoid(x) * (1 - sigmoid(x))
+            return x * (1-x)
         elif self.activation == 'relu':
             return np.where(x > 0, 1, 0)
         elif self.activation == 'tanh':
@@ -66,30 +67,40 @@ class NeuralNetwork:
     # Propagate the input data through the neural network, compute predictions
     # X is the input matrix
     # returns all activations
-    def forward(self, batch):
-        hidden = [batch.copy()]
+    def forward(self, batch: np.ndarray):
+        activations = [batch.copy()]
         for i in range(self.layer_count - 1):
-            batch = np.matmul(batch, self.weights[i]) + self.biases[i]
-            if i < self.layer_count - 2:
-                batch = self._activation_function(batch)
+            weight_i = self.weights[i]
+            sums = np.matmul(batch, weight_i)
+            with_biases = sums + self.biases[i]
+            batch = with_biases #np.matmul(batch, self.weights[i]) + self.biases[i]
             # Store the forward pass hidden values for use in backprop
-            hidden.append(batch.copy())
-        return batch, hidden
+            batch = self._activation_function(batch)
+            # if i < self.layer_count - 2:
+            activations.append(batch.copy())
+        return batch, activations
 
     # Backpropagation: figure out how bad hypothesis (each assigned weight) is -> derive E
-    def backward(self, hidden, deltas):
-        for i in reversed(range(1, self.layer_count - 1)):
-            if i != self.layer_count - 2:
-                # Compute the derivative of the activation function
-                activation_derivative = self._activation_derivative(hidden[i + 1])
-                deltas = np.multiply(deltas, activation_derivative)
+    def backward(self, activations, error):
+        # compute for output layer
 
-            self.weights[i] -= self.learning_rate * np.dot(hidden[i].T, deltas)
-            self.biases[i] -= self.learning_rate * np.mean(deltas, axis=0)
+        # init deltas
+        deltas = np.multiply(error, self._activation_derivative(activations[-1]))
+        for i in reversed(range(self.layer_count - 1)):
+            if i < self.layer_count - 2:
+                deltas = np.multiply(deltas, self._activation_derivative(activations[i+1]))
+
+            w_pre = activations[i].T @ deltas
+            b_pre = np.mean(deltas)
+
             deltas = deltas @ self.weights[i].T
+
+            self.weights[i] -= self.learning_rate * w_pre
+            self.biases[i] -= self.learning_rate * b_pre
+
         return
 
-    def calculate_loss(self, actual: np.ndarray, predicted: np.ndarray):
+    def calculate_abs_loss(self, actual: np.ndarray, predicted: np.ndarray):
         return predicted - actual
 
     def calculate_mse(self, actual: np.ndarray, predicted: np.ndarray) -> np.ndarray:
@@ -102,7 +113,7 @@ class NeuralNetwork:
         X, X_v, y, y_v = train_test_split(X, y, test_size=self._validation_split, random_state=12)
 
         indices = np.random.permutation(len(X))
-        X_shuffled, y_shuffled = X[indices], y[indices]
+        X_shuffled, y_shuffled = np.array(X[indices]), np.array(y[indices])
 
         for epoch in range(epochs):
             # Shuffle the data and divide into mini-batches
@@ -110,15 +121,15 @@ class NeuralNetwork:
             for i in range(0, len(X), self._batch_size):
                 try:
                     # Select mini-batch
-                    x_batch, y_batch = (X_shuffled[i:i + self._batch_size],
-                                        y_shuffled[i:i + self._batch_size])
+                    x_batch, y_batch = (X_shuffled[i:(i + self._batch_size)],
+                                        y_shuffled[i:(i + self._batch_size)])
                     # Forward pass
-                    pred, hidden = self.forward(x_batch)
+                    pred, activations = self.forward(x_batch)
                     # Calculate loss
-                    batch_loss = self.calculate_loss(y_batch, pred)
+                    batch_loss = self.calculate_abs_loss(y_batch, pred)
                     epoch_losses.append(np.mean(batch_loss ** 2))
                     # Backward pass
-                    self.backward(hidden, batch_loss)
+                    self.backward(activations, batch_loss)
                 except ValueError as e:
                     raise ValueError("failed in epoch: ", epoch, " with error: ", e)
 
