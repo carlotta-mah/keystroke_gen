@@ -1,5 +1,3 @@
-import math
-
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors
@@ -20,7 +18,7 @@ def test_neural_network():
 
     # plot
     plt.scatter(data[:, 0], data[:, 1], c=labels, cmap=my_cmap)
-    plt.show()
+    # plt.show()
 
     # split the data
     X_train, X_test, y_train, y_test = train_test_split(data, labels, stratify=labels, test_size=0.2, random_state=0)
@@ -29,11 +27,12 @@ def test_neural_network():
 
     # Create a neural network instance
     layer_structure = [X_train.shape[1], 10, 10, 1]
-    nn = NeuralNetwork(layer_structure, 0.0002, 'sigmoid')
+    nn = NeuralNetwork(file=None, layer_structure=layer_structure, learning_rate=0.0002, activation='sigmoid')
 
     # Train the neural network and make predictions on training data
     nn.train(X_train, y_train, epochs=1000)
     predictions = nn.get_prediction(X_train)
+    nn.plot_learning()
 
     assert predictions.shape == y_train.shape
 
@@ -47,7 +46,7 @@ def test_forward_propagation():
     # Create a neural network instance and input data
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
     layer_structure = [X.shape[1], 10, 10, 1]
-    nn = NeuralNetwork(layer_structure, 0.0002, 'sigmoid')
+    nn = NeuralNetwork(file=None, layer_structure=layer_structure, learning_rate=0.0002, activation='sigmoid')
 
     # Forward propagation
     pred, hidden = nn.forward(X)
@@ -63,7 +62,7 @@ def test_backward_propagation_shapes():
 
     # Create a neural network instance
     layer_structure = [X.shape[1], 10, 10, 1]
-    nn = NeuralNetwork(layer_structure, 0.0002, 'sigmoid')
+    nn = NeuralNetwork(file=None, layer_structure=layer_structure, learning_rate=0.0002, activation='sigmoid')
 
     # Forward
     _, hidden = nn.forward(X)
@@ -77,7 +76,7 @@ def test_backward_propagation_shapes():
         assert not np.allclose(nn.biases[i], np.zeros_like(nn.biases[i]))
 
 def test_backward_propagation():
-    nn = NeuralNetwork([2, 2, 2], 0.6, 'sigmoid')
+    nn = NeuralNetwork(file=None, layer_structure=[2,2,2], learning_rate=0.0002, activation='sigmoid')
     X1 = np.array([[0.1, 0.5]])
     y1 = np.array([[0.05, 0.95]])
     nn.weights = [np.array([[0.1, 0.2], [0.3, 0.4]]), np.array([[0.5, 0.7], [0.6, 0.8]])]
@@ -92,3 +91,29 @@ def test_backward_propagation():
     weights = list(chain.from_iterable(nn.weights))
     assert (0.00001 > np.abs(weights - expected_weights)).all
 
+def test_save_load_model():
+    # Create a neural network instance
+    layer_structure = [4, 10, 10, 1]
+    nn = NeuralNetwork(file=None, layer_structure=layer_structure, learning_rate=0.0002, activation='sigmoid')
+
+    # Train the neural network
+    X = np.random.rand(10, 4)
+    y = np.random.rand(10, 1)
+    nn.train(X, y, epochs=10)
+    train_loss = nn._losses['train']
+    validation_loss = nn._losses['validation']
+    # Save the model
+    nn.save_model('model')
+
+    # Load the model
+    nn.load_model('model.npy')
+
+    # Check if the model was loaded correctly
+    assert nn.layer_sizes == layer_structure
+    assert len(nn.weights) == len(layer_structure) - 1
+    assert len(nn.biases) == len(layer_structure) - 1
+    assert nn.activation == 'sigmoid'
+    assert nn.learning_rate == 0.0002
+    assert nn._batch_size == 32
+    assert nn._validation_split == 0.2
+    assert nn._losses == {'train': train_loss, 'validation': validation_loss}

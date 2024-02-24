@@ -11,18 +11,19 @@ def test_read_keystroke_data():
     filename = 'test/test_data.txt'
     df = read_keystroke_data(filename)
     assert len(df) == 25
-    assert len(df.iloc[0]) == 6
+    assert len(df.iloc[0]) == 5
     assert df.iloc[0]['PRESS_TIME'] == 1476488368032
 
 
 def test_preprocess_data():
     # Sample DataFrame with test data
     data = {
-        'PRESS_TIME': [1000, 1500, None, 2000],  # Include some missing values
-        'RELEASE_TIME': [1500, 2000, 2500, None],  # Include some missing values
-        'KEYCODE': [72, 69, 76, 77],
-        'USER_INPUT': ['A', 'B', 'C', 'D'],
-        'SEQUENCE_ID': [1, 2, 1, 2],
+        'PARTICIPANT_ID': [1, 2, 1, 2, 1, 2, 1, 2],
+        'TEST_SECTION_ID': [1, 1, 2, 2, 3, 3, 4, 4],
+        'PRESS_TIME': [1000, 1500, 1799, 2000, 2200, 2500, 2800, None],
+        'RELEASE_TIME': [1500, 2000, 2500, 3000, 3500, None, 4500, 5000],
+        'KEYCODE': [72, 69, 76, 77, 79, 82, 65, 66],
+        'USER_INPUT': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
     }
     df = pd.DataFrame(data)
 
@@ -30,4 +31,4 @@ def test_preprocess_data():
     df_preprocessed = preprocess_data(df)
 
     # Check if DataFrame matches the expected shape
-    assert df_preprocessed.shape == (2, 10)  # Expected shape after dropping rows with missing values
+    assert df_preprocessed.shape == (2, 11)  # Expected shape after dropping rows with missing values

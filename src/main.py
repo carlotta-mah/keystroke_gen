@@ -56,17 +56,15 @@ def run_with_dummy_data():
 
     print("Test error: ", mean_squared_error(y_test, y_pred))
 
-def run_with_keystroke_data():
-    # Load your keystroke data into a DataFrame
-    keystroke_df = data_processor.read_keystroke_data('../data/Keystrokes/files/*_keystrokes.txt', 100)
-    print(keystroke_df.head())
-    df_preprocessed = data_processor.preprocess_data(keystroke_df)
+def fit_with_keystroke_data():
+    # Load the dataset
+    dataset = data_processor.get_train_data()
 
-    # Extract features and target variable, skip headings
-    X = df_preprocessed.drop(columns=['PARTICIPANT_ID', 'SEQUENCE_ID']).values  # Features
-    y = (df_preprocessed['PARTICIPANT_ID']).values  # Target labels
+    # Extract features and target variable
+    X = dataset.data  # Features
+    y = dataset.labels  # Target labels
 
-    # Encode the target variable (SEQUENCE_ID) using LabelEncoder
+    # Encode the target variable (PARTICIPANT_ID) using LabelEncoder
     label_encoder = LabelEncoder()
     y_encoded = data_processor.encode_participant_ids(label_encoder.fit_transform(y))
 
@@ -75,16 +73,23 @@ def run_with_keystroke_data():
 
     # Initialize and train the neural network model
     layers = [X_train.shape[1], 63, 3, len(label_encoder.classes_)]
-    nn = NeuralNetwork(layer_structure=layers, learning_rate=0.0001, activation='softmax')
+    nn = NeuralNetwork(layer_structure=layers, learning_rate=0.0001, activation='relu')
     nn.train(X_train, y_train, epochs=1000)
 
     # Get predictions and calculate the mean squared error
     y_pred = nn.get_prediction(X_test)
+    nn.plot_learning()
     print("Test error: ", mean_squared_error(y_test, y_pred))
+
+    #save the model
+    nn.save_model('model')
 
 
 if __name__ == "__main__":
-    # run_with_dummy_data()
-    run_with_keystroke_data()
+    # save keystroke data in dataset
+    keystroke_df = data_processor.read_keystroke_data('../data/Keystrokes/files/*_keystrokes.txt', 1000)
+    data_processor.save_keystroke_dataset(keystroke_df, 10)
+
+    fit_with_keystroke_data()
     print("Done")
 

@@ -23,18 +23,26 @@ def sigmoid(x):
 
 class NeuralNetwork:
     def __init__(self,
-                 layer_structure,
+                 file=None,
+                 layer_structure=None,
                  learning_rate=0.01,
                  activation='sigmoid',
-                 validation_split=0.2):
-        self.layer_sizes: List[int] = layer_structure
-        self.layer_count = len(layer_structure)
-        self._initialize_weights_and_biases()
-        self.learning_rate = learning_rate
-        self.activation = activation
-        self._losses: Dict[str, list] = {"train": [], "validation": []}
-        self._validation_split = validation_split
+                 validation_split=0.2,
+                 ):
         self._batch_size = 32
+        if file is not None:
+            self.load_model(file)
+        else:
+            if layer_structure is None:
+                raise ValueError("Layer structure is required.")
+            self.learning_rate = learning_rate
+            self.layer_sizes: List[int] = layer_structure
+            self.layer_count = len(layer_structure)
+            self._initialize_weights_and_biases()
+            self.activation = activation
+            self._losses: Dict[str, list] = {"train": [], "validation": []}
+            self._validation_split = validation_split
+
 
     def _initialize_weights_and_biases(self):
         self.biases = [np.ones((1, size)) for size in self.layer_sizes[1:]]
@@ -70,13 +78,11 @@ class NeuralNetwork:
     def forward(self, batch: np.ndarray):
         activations = [batch.copy()]
         for i in range(self.layer_count - 1):
-            weight_i = self.weights[i]
-            sums = np.matmul(batch, weight_i)
-            with_biases = sums + self.biases[i]
-            batch = with_biases #np.matmul(batch, self.weights[i]) + self.biases[i]
-            # Store the forward pass hidden values for use in backprop
+            sums = np.matmul(batch, self.weights[i])
+            batch = sums + self.biases[i]
             batch = self._activation_function(batch)
-            # if i < self.layer_count - 2:
+
+            # Store the forward pass hidden values for use in backprop
             activations.append(batch.copy())
         return batch, activations
 
@@ -147,3 +153,28 @@ class NeuralNetwork:
     def get_prediction(self, X):
         pred, _ = self.forward(X)
         return pred
+
+    def save_model(self, filename):
+        model = {'weights': self.weights, 'biases': self.biases, 'activation': self.activation, 'layer_sizes': self.layer_sizes,
+                 'losses': self._losses, 'learning_rate': self.learning_rate, 'batch_size': self._batch_size}
+        np.save(filename, model)
+
+    def load_model(self, filename):
+        model = np.load(filename, allow_pickle=True)
+        self.layer_sizes = model.item().get('layer_sizes')
+        self.layer_count = len(self.layer_sizes)
+        self.weights = model.item().get('weights')
+        self.biases = model.item().get('biases')
+        self.activation = model.item().get('activation')
+        self._losses = model.item().get('losses')
+        self.learning_rate = model.item().get('learning_rate')
+        self._batch_size = model.item().get('batch_size')
+        return
+
+    def plot_learning(self):
+        import matplotlib.pyplot as plt
+        plt.plot(self._losses["train"], label="Train Loss")
+        plt.plot(self._losses["validation"], label="Validation Loss")
+        plt.legend()
+        plt.show()
+        return
