@@ -6,10 +6,40 @@ import pandas as pd
 import glob
 from sklearn.model_selection import train_test_split
 import numpy as np
+from torch.utils.data import Dataset
+import torch
+
+from src.ks_dataset import KeystrokeDataset
+
+
+def get_train_data():
+    return torch.load('../data/keystroke_train_dataset.pt')
+
+
+def get_classify_data():
+    return torch.load('../data/keystroke_classify_dataset.pt')
+
+
+def save_keystroke_dataset(df: pd.DataFrame, train_split: int = 10, filename: str = 'keystroke_dataset.pt'):
+    sentence_ks_data = preprocess_data(df)
+    # split series into 10 train sentences and the other sentences
+    grouped_ks_data = sentence_ks_data.groupby('PARTICIPANT_ID')
+
+    # for each series in groupby, take the first 10 sentences
+    train_sentence_ks_data, classify_ks_data = grouped_ks_data.head(10).reset_index(drop=True), grouped_ks_data.tail(
+        -10).reset_index(drop=True)
+    train_dataset, classify_dataset = (
+    KeystrokeDataset(train_sentence_ks_data.drop(columns=['PARTICIPANT_ID'], axis=1).values,
+                     train_sentence_ks_data['PARTICIPANT_ID'].values),
+    KeystrokeDataset(classify_ks_data.drop(columns=['PARTICIPANT_ID'], axis=1).values,
+                     classify_ks_data['PARTICIPANT_ID'].values))
+    torch.save(train_dataset, '../data/keystroke_train_dataset.pt')
+    torch.save(classify_dataset, '../data/keystroke_classify_dataset.pt')
 
 
 def read_keystroke_data(pattern, limit=None):
-    '''Read keystroke data from files matching the specified pattern and return as a DataFrame.'''
+    '''Read keystroke data from files matching the specified pattern and return as a DataFrame.
+    '''
 
     # If no pattern is specified, use the default pattern
     if pattern is None:
@@ -28,33 +58,38 @@ def read_keystroke_data(pattern, limit=None):
                                           encoding='latin-1',
                                           usecols=columns_to_keep,
                                           quoting=csv.QUOTE_NONE,
-                                          parse_dates={'SEQUENCE_ID': ['PARTICIPANT_ID', 'TEST_SECTION_ID']},
-                                          keep_date_col=True)
+                                          )
                               for file in file_list], ignore_index=True)
+
     return keystroke_df
 
 
 # Step 2: Data preprocessing
 # todo: encoding in sequences
-def preprocess_data(keystroke_df):
+def preprocess_data(keystroke_df, train_split=10):
     '''Preprocess keystroke data.
-    Features are scaled and additional features are extracted.'''
+    Features are scaled and additional features are extracted.
+    :param train_split: '''
+
+    # Create a unique sequence ID for each group
+    keystroke_df['SEQUENCE_ID'] = keystroke_df['PARTICIPANT_ID'] + keystroke_df['TEST_SECTION_ID']
+    keystroke_df = keystroke_df.drop(columns=['TEST_SECTION_ID'])
 
     # Convert timestamps to milliseconds
     keystroke_df['PRESS_TIME'] = pd.to_numeric(keystroke_df['PRESS_TIME'], errors='coerce')
     keystroke_df['RELEASE_TIME'] = pd.to_numeric(keystroke_df['RELEASE_TIME'], errors='coerce')
     # Convert keycodes to integers
-    keystroke_df['KEYCODE'] = keystroke_df['KEYCODE'].astype(int)
+    keystroke_df['KEYCODE'] = pd.to_numeric(keystroke_df['KEYCODE'], errors='coerce')
 
     # Drop rows with missing values
     keystroke_df = keystroke_df.dropna()
 
-
     # Feature scaling
-    keystroke_df[['PRESS_TIME', 'RELEASE_TIME']] = scale_features(
-        keystroke_df[['PRESS_TIME', 'RELEASE_TIME']])
+    keystroke_df.loc[:, ['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']] = scale_features(
+        keystroke_df[['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']])
 
     # Calculate sequence start time for each group
+
     keystroke_df['SEQUENCE_START_TIME'] = keystroke_df.groupby(['SEQUENCE_ID'])['PRESS_TIME'].transform('min')
 
     # Calculate press time relative to sequence start time and press duration
@@ -62,8 +97,10 @@ def preprocess_data(keystroke_df):
     keystroke_df['PRESS_DURATION'] = keystroke_df['RELEASE_TIME'] - keystroke_df['PRESS_TIME']
     keystroke_series = keystroke_df.groupby(['SEQUENCE_ID']).apply(
         lambda x: x.sort_values('PRESS_TIME')).reset_index(drop=True)
-
-    return extract_features(keystroke_series)
+    data = extract_features(keystroke_series)
+    # split data in train sentences
+    train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
+    return data
 
 
 def scale_features(keystroke_df):
@@ -89,6 +126,8 @@ def encode_participant_ids(y: np.ndarray) -> np.ndarray:
         encoded_labels[i, int(participant_id)] = 1
 
     return encoded_labels
+
+
 # Function to extract timing and keycode-based features from a series of keystrokes
 def extract_features(keystrokes_series):
     '''Extract keystroke features from a series of keystrokes.'''
@@ -103,21 +142,16 @@ def extract_features(keystrokes_series):
         press_durations = group['PRESS_DURATION'].values
         keycodes = group['KEYCODE'].values
 
-        # Calculate release times from press times and durations
-        release_times = press_times + press_durations
-
         # Calculate duration for each keystroke
-        durations = release_times - press_times
-
         # Calculate inter-key intervals (time between consecutive key presses)
         # if there is only one key press, the inter-key interval is 0
-        inter_key_intervals = np.diff(press_times, prepend=0)
+        inter_key_intervals = np.diff(press_times)
 
         # Compute statistical characteristics of durations and inter-key intervals
-        mean_duration = np.mean(durations)
-        std_duration = np.std(durations)
-        min_duration = np.min(durations)
-        max_duration = np.max(durations)
+        mean_duration = np.mean(press_durations)
+        std_duration = np.std(press_durations)
+        min_duration = np.min(press_durations)
+        max_duration = np.max(press_durations)
 
         mean_inter_key_interval = np.mean(inter_key_intervals)
         std_inter_key_interval = np.std(inter_key_intervals)
@@ -151,6 +185,7 @@ def extract_features(keystrokes_series):
     extracted_features_df = pd.DataFrame(extracted_features)
 
     return extracted_features_df
+
 
 if __name__ == "__main__":
     # example usage
