@@ -18,7 +18,7 @@ def test_neural_network():
 
     # plot
     plt.scatter(data[:, 0], data[:, 1], c=labels, cmap=my_cmap)
-    plt.show()
+    # plt.show()
 
     # split the data
     X_train, X_test, y_train, y_test = train_test_split(data, labels, stratify=labels, test_size=0.2, random_state=0)
@@ -27,7 +27,7 @@ def test_neural_network():
 
     # Create a neural network instance
     layer_structure = [X_train.shape[1], 10, 10, 1]
-    nn = NeuralNetwork(layer_structure, 0.0002, 'sigmoid')
+    nn = NeuralNetwork(file=None, layer_structure=layer_structure, learning_rate=0.0002, activation='sigmoid')
 
     # Train the neural network and make predictions on training data
     nn.train(X_train, y_train, epochs=1000)
@@ -46,7 +46,7 @@ def test_forward_propagation():
     # Create a neural network instance and input data
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
     layer_structure = [X.shape[1], 10, 10, 1]
-    nn = NeuralNetwork(layer_structure, 0.0002, 'sigmoid')
+    nn = NeuralNetwork(file=None, layer_structure=layer_structure, learning_rate=0.0002, activation='sigmoid')
 
     # Forward propagation
     pred, hidden = nn.forward(X)
@@ -62,7 +62,7 @@ def test_backward_propagation_shapes():
 
     # Create a neural network instance
     layer_structure = [X.shape[1], 10, 10, 1]
-    nn = NeuralNetwork(layer_structure, 0.0002, 'sigmoid')
+    nn = NeuralNetwork(file=None, layer_structure=layer_structure, learning_rate=0.0002, activation='sigmoid')
 
     # Forward
     _, hidden = nn.forward(X)
@@ -76,7 +76,7 @@ def test_backward_propagation_shapes():
         assert not np.allclose(nn.biases[i], np.zeros_like(nn.biases[i]))
 
 def test_backward_propagation():
-    nn = NeuralNetwork([2, 2, 2], 0.6, 'sigmoid')
+    nn = NeuralNetwork(file=None, layer_structure=[2,2,2], learning_rate=0.0002, activation='sigmoid')
     X1 = np.array([[0.1, 0.5]])
     y1 = np.array([[0.05, 0.95]])
     nn.weights = [np.array([[0.1, 0.2], [0.3, 0.4]]), np.array([[0.5, 0.7], [0.6, 0.8]])]
@@ -94,7 +94,7 @@ def test_backward_propagation():
 def test_save_load_model():
     # Create a neural network instance
     layer_structure = [4, 10, 10, 1]
-    nn = NeuralNetwork(layer_structure, 0.0002, 'sigmoid')
+    nn = NeuralNetwork(file=None, layer_structure=layer_structure, learning_rate=0.0002, activation='sigmoid')
 
     # Train the neural network
     X = np.random.rand(10, 4)

@@ -97,10 +97,7 @@ def preprocess_data(keystroke_df, train_split=10):
     keystroke_df['PRESS_DURATION'] = keystroke_df['RELEASE_TIME'] - keystroke_df['PRESS_TIME']
     keystroke_series = keystroke_df.groupby(['SEQUENCE_ID']).apply(
         lambda x: x.sort_values('PRESS_TIME')).reset_index(drop=True)
-    data = extract_features(keystroke_series)
-    # split data in train sentences
-    train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
-    return data
+    return extract_features(keystroke_series)
 
 
 def scale_features(keystroke_df):
@@ -134,9 +131,10 @@ def extract_features(keystrokes_series):
 
     # Group keystrokes by sequence ID
     grouped_df = keystrokes_series.groupby('SEQUENCE_ID')
-
     extracted_features = []
     for sequence_id, group in grouped_df:
+        if len(group) < 2:
+            continue
         # Extract press times, durations, and keycodes for the current sequence ID
         press_times = group['PRESS_TIME'].values
         press_durations = group['PRESS_DURATION'].values
