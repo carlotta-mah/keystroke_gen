@@ -6,5 +6,6 @@ coverage
 matplotlib~=3.8.2
 numpy~=1.26.3
 flask
+torch
 # if you get an error during bertopic pip install try: conda install -c conda-forge hdbscan
 

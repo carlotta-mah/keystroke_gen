@@ -23,17 +23,19 @@ def sigmoid(x):
 
 class NeuralNetwork:
     def __init__(self,
-                 layer_structure,
+                 file=None,
+                 layer_structure=None,
                  learning_rate=0.01,
                  activation='sigmoid',
                  validation_split=0.2,
-                 file=None
                  ):
         self._batch_size = 32
-        self.learning_rate = learning_rate
-        if file:
+        if file is not None:
             self.load_model(file)
         else:
+            if layer_structure is None:
+                raise ValueError("Layer structure is required.")
+            self.learning_rate = learning_rate
             self.layer_sizes: List[int] = layer_structure
             self.layer_count = len(layer_structure)
             self._initialize_weights_and_biases()
