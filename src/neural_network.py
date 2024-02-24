@@ -147,3 +147,11 @@ class NeuralNetwork:
     def get_prediction(self, X):
         pred, _ = self.forward(X)
         return pred
+
+    def plot_learning(self):
+        import matplotlib.pyplot as plt
+        plt.plot(self._losses["train"], label="Train Loss")
+        plt.plot(self._losses["validation"], label="Validation Loss")
+        plt.legend()
+        plt.show()
+        return
