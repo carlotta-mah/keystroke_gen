@@ -17,6 +17,8 @@ You may also run the program using the Jupyter notebook [ks_model_interact.ipynb
 
 ## Testing
 To run the tests, you may run the following command in the terminal: 
-```pytest```
+
+```coverage run -m pytest```
+
 Or run the tests via github actions on the main page of the repository.
 
