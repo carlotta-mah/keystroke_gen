@@ -1,6 +1,10 @@
 # How to run the program
 
 ## Requirements
+First activate the virtual environment by running the following command in the terminal: 
+
+```source venv/bin/activate```
+
 Before running the program, make sure you have the requirements in the `requirements.txt` file installed. You can install them by running the following command in the terminal: 
 
 ```pip install -r requirements.txt```
