@@ -4,13 +4,16 @@ class KeystrokeDataset(Dataset):
         if data is None:
             data = []
         self.data = data
+        if labels is None:
+            labels = []
         self.labels = labels
+
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
         data = self.data[idx]
-        labels = self.labels.iloc[idx]
+        labels = self.labels[idx]
         return data, labels
 
     def append_item(self, data_point, label):

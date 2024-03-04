@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Author: Carlotta Mahncke
 import csv
+import os
 import sys
 import pandas as pd
 import glob
@@ -12,15 +13,15 @@ import torch
 from src.ks_dataset import KeystrokeDataset
 
 
-def get_train_data():
-    return torch.load('../data/keystroke_train_dataset.pt')
+def get_train_data(filename='keystroke_dataset.pt', dir: str = '../data'):
+    return torch.load(dir + '/train_' + filename)
 
 
-def get_classify_data():
-    return torch.load('../data/keystroke_classify_dataset.pt')
+def get_classify_data(filename = 'keystroke_dataset.pt', dir: str = '../data'):
+    return torch.load(dir + '/classify_' + filename )
 
 
-def save_keystroke_dataset(df: pd.DataFrame, train_split: int = 10, filename: str = 'keystroke_dataset.pt'):
+def save_keystroke_dataset(df: pd.DataFrame, train_split: int = 10, filename: str = 'keystroke_dataset.pt', dir: str = '../data'):
     sentence_ks_data = preprocess_data(df)
     # split series into 10 train sentences and the other sentences
     grouped_ks_data = sentence_ks_data.groupby('PARTICIPANT_ID')
@@ -33,38 +34,45 @@ def save_keystroke_dataset(df: pd.DataFrame, train_split: int = 10, filename: st
                      train_sentence_ks_data['PARTICIPANT_ID'].values),
     KeystrokeDataset(classify_ks_data.drop(columns=['PARTICIPANT_ID'], axis=1).values,
                      classify_ks_data['PARTICIPANT_ID'].values))
-    torch.save(train_dataset, '../data/keystroke_train_dataset.pt')
-    torch.save(classify_dataset, '../data/keystroke_classify_dataset.pt')
+    torch.save(train_dataset, dir + '/train_'+filename)
+    torch.save(classify_dataset, dir +'/classify_' + filename)
 
 
-def read_keystroke_data(pattern, limit=None):
+def read_keystroke_data(pattern='*_keystrokes.txt', limit=None):
     '''Read keystroke data from files matching the specified pattern and return as a DataFrame.
     '''
-
-    # If no pattern is specified, use the default pattern
-    if pattern is None:
-        file = '*_keystrokes.txt'
 
     # columns that we want to process
     columns_to_keep = ['PARTICIPANT_ID', 'TEST_SECTION_ID', 'PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']
 
+    print('Reading keystroke data from files matching the pattern:', pattern)
+    print("current working directory: ", os.getcwd())
     # Find files matching the specified pattern
     file_list = glob.glob(pattern)
     file_list = file_list[:limit or len(file_list)]
 
-    # Read the data from each file and concatenate into a single DataFrame
-    keystroke_df = pd.concat([pd.read_csv(file, sep='\t',
-                                          encoding='latin-1',
-                                          usecols=columns_to_keep,
-                                          quoting=csv.QUOTE_NONE,
-                                          )
-                              for file in file_list], ignore_index=True)
+    if len(file_list) == 0:
+        sys.exit('No files found matching the specified pattern.')
+    if len(file_list) == 1:
+        keystroke_df = pd.read_csv(file_list[0], sep='\t',
+                                  encoding='latin-1',
+                                  usecols=columns_to_keep,
+                                  quoting=csv.QUOTE_NONE,
+                                  )
+    else:
+        # Read the data from each file and concatenate into a single DataFrame
+        keystroke_df = pd.concat([pd.read_csv(file, sep='\t',
+                                              encoding='latin-1',
+                                              usecols=columns_to_keep,
+                                              quoting=csv.QUOTE_NONE,
+                                              )
+                                  for file in file_list], ignore_index=True)
 
     return keystroke_df
 
 
 # todo: encoding in sequences
-def preprocess_data(keystroke_df, train_split=10):
+def preprocess_data(keystroke_df):
     '''Preprocess keystroke data.
     Features are scaled and additional features are extracted.
     :param train_split: '''
@@ -110,17 +118,8 @@ def scale_features(keystroke_df):
 
 # one-hot-encoding
 def encode_participant_ids(y: np.ndarray) -> np.ndarray:
-    # Extract unique participant IDs from the second column of y
-    participant_ids = np.unique(y)
-
-    # Create an empty array to store the encoded labels
-    encoded_labels = np.zeros((len(y), len(participant_ids)), dtype=int)
-
-    # Populate the array with one-hot encoded labels
-    for i, participant_id in enumerate(y):
-        encoded_labels[i, int(participant_id)] = 1
-
-    return encoded_labels
+    # one hot encoding
+    return np.eye(len(np.unique(y)))[y]
 
 
 # Function to extract timing and keycode-based features from a series of keystrokes
@@ -160,7 +159,6 @@ def extract_features(keystrokes_series):
         num_unique_keycodes = len(unique_keycodes)
 
         # Store features in a dictionary
-        # todo: select important features
         features = {
             'PARTICIPANT_ID': group['PARTICIPANT_ID'].values[0],
             'mean_duration': mean_duration,
@@ -181,34 +179,3 @@ def extract_features(keystrokes_series):
     extracted_features_df = pd.DataFrame(extracted_features)
 
     return extracted_features_df
-
-
-if __name__ == "__main__":
-    # example usage
-    if len(sys.argv) != 2:
-        print("Usage: python script.py <filename> or <number of files>")
-        sys.exit(1)
-    filespec = sys.argv[1]
-    df = None
-
-    # if filename is number process number files
-    if filespec.isdigit():
-        file_pattern = '../data/Keystrokes/files/????_keystrokes.txt'
-        df = read_keystroke_data(file_pattern, filespec)
-    else:
-        try:
-            df = read_keystroke_data("../data/Keystrokes/files/" + filespec)  # todo: add path before block
-        except FileNotFoundError:
-            print("File not found:", filespec)
-        except Exception as e:
-            print("An error occurred:", e)
-
-    if df is not None:
-        df_preprocessed = preprocess_data(df)
-
-        # Step 5: Split the data into training and testing sets
-        X = df_preprocessed.drop('USER_INPUT', axis=1)
-        y = df_preprocessed['USER_INPUT']
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        print("Number of samples:", len(df))
-        print("Sample format:", df.iloc[0])

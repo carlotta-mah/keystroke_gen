@@ -29,8 +29,6 @@ def test_neural_network():
     # Train the neural network and make predictions on training data
     nn.train(X_train, y_train, epochs=1000)
     predictions = nn.get_prediction(X_train)
-    nn.plot_learning()
-    accuracy = nn.calculate_accuracy(predictions, y_train)
 
     assert predictions.shape == y_train.shape
 
