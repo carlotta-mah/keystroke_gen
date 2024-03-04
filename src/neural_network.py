@@ -10,16 +10,15 @@ from typing import Dict, List, Tuple
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-
+from sklearn.metrics import accuracy_score
 
 def softmax(x):
     exps = np.exp(x)
-    return exps / np.sum(exps)
+    return exps / np.sum(exps, axis=1, keepdims=True)
 
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
-
 
 class NeuralNetwork:
     def __init__(self,
@@ -56,21 +55,17 @@ class NeuralNetwork:
             return np.maximum(0, x)
         elif self.activation == 'tanh':
             return np.tanh(x)
-        elif self.activation == 'softmax':
-            return softmax(x)
         else:
             raise ValueError("Invalid activation function. Choose from 'sigmoid', 'relu', or 'tanh'.")
 
     def _activation_derivative(self, x):
         if self.activation == 'sigmoid':
-            # return sigmoid(x) * (1 - sigmoid(x))
-            return x * (1-x)
+            return sigmoid(x) * (1 - sigmoid(x))
+            # return x * (1-x)
         elif self.activation == 'relu':
             return np.where(x > 0, 1, 0)
         elif self.activation == 'tanh':
             return 1 - np.power(x, 2)
-        elif self.activation == 'softmax':
-            return softmax(x) * (1 - softmax(x))
 
     # Propagate the input data through the neural network, compute predictions
     # X is the input matrix
@@ -80,7 +75,10 @@ class NeuralNetwork:
         for i in range(self.layer_count - 1):
             sums = np.matmul(batch, self.weights[i])
             batch = sums + self.biases[i]
-            batch = self._activation_function(batch)
+            if i == self.layer_count - 2:
+                batch = softmax(batch)
+            else:
+                batch = self._activation_function(batch)
 
             # Store the forward pass hidden values for use in backprop
             activations.append(batch.copy())
@@ -91,7 +89,7 @@ class NeuralNetwork:
         # compute for output layer
 
         # init deltas
-        deltas = np.multiply(error, self._activation_derivative(activations[-1]))
+        deltas = np.multiply(error, (activations[-1]))
         for i in reversed(range(self.layer_count - 1)):
             if i < self.layer_count - 2:
                 deltas = np.multiply(deltas, self._activation_derivative(activations[i+1]))
@@ -118,8 +116,8 @@ class NeuralNetwork:
         # validation split
         X, X_v, y, y_v = train_test_split(X, y, test_size=self._validation_split, random_state=12)
 
-        indices = np.random.permutation(len(X))
-        X_shuffled, y_shuffled = np.array(X[indices]), np.array(y[indices])
+        # indices = np.random.permutation(len(X))
+        # X_shuffled, y_shuffled = np.array(X[indices]), np.array(y[indices])
 
         for epoch in range(epochs):
             # Shuffle the data and divide into mini-batches
@@ -127,15 +125,16 @@ class NeuralNetwork:
             for i in range(0, len(X), self._batch_size):
                 try:
                     # Select mini-batch
-                    x_batch, y_batch = (X_shuffled[i:(i + self._batch_size)],
-                                        y_shuffled[i:(i + self._batch_size)])
+                    x_batch, y_batch = (X[i:(i + self._batch_size)],
+                                        y[i:(i + self._batch_size)])
                     # Forward pass
                     pred, activations = self.forward(x_batch)
                     # Calculate loss
-                    batch_loss = self.calculate_abs_loss(y_batch, pred)
-                    epoch_losses.append(np.mean(batch_loss ** 2))
+                    batch_loss = self.cross_entropy(y_batch, pred)/len(x_batch)
+                    # batch_loss = self.categorical_cross_entropy(y_batch, pred)
+                    epoch_losses.append(batch_loss)
                     # Backward pass
-                    self.backward(activations, batch_loss)
+                    self.backward(activations, self.calculate_abs_loss(y_batch, pred))
                 except ValueError as e:
                     raise ValueError("failed in epoch: ", epoch, " with error: ", e)
 
@@ -143,16 +142,19 @@ class NeuralNetwork:
             self._losses["train"].append(train_loss)
 
             validation_pred, _ = self.forward(X_v)
-            validation_loss = np.mean(self.calculate_mse(validation_pred, y_v))
+            validation_loss = self.cross_entropy(y_v, validation_pred)/len(X_v)
             self._losses["validation"].append(validation_loss)
 
             # Every 100 epochs, print loss.
             if epoch % 100 == 0:
-                print(f'Epoch {epoch}, Loss: {train_loss}, Validation Loss: {validation_loss}')
+                print(f'Epoch {epoch}, Loss: {train_loss}, Validation Loss: {np.mean(validation_loss)}')
 
     def get_prediction(self, X):
         pred, _ = self.forward(X)
-        return pred
+        # set the highest probability to 1 and the rest to 0
+        m = np.zeros_like(pred) # alternatively, with multiple 1:  pred = (pred == pred.max(axis=1)[:,None]).astype(int)
+        m[np.arange(len(pred)), pred.argmax(1)] = 1
+        return m
 
     def save_model(self, filename):
         model = {'weights': self.weights, 'biases': self.biases, 'activation': self.activation, 'layer_sizes': self.layer_sizes,
@@ -178,3 +180,34 @@ class NeuralNetwork:
         plt.legend()
         plt.show()
         return
+
+    def calculate_accuracy(self, y_true, predictions):
+        return np.mean(np.argmax(predictions, axis=1) == np.argmax(y_true, axis=1))
+    def calculate_macro_precision(self, y_true, y_pred):
+        y_true = np.argmax(y_true, axis=1)
+        y_pred = np.argmax(y_pred, axis=1)
+        classes = list(np.unique(y_true))
+        precision = 0
+        for c in classes:
+            c_true = np.array([1 if p == c else 0 for p in y_true])
+            c_pred = np.array([1 if p == c else 0 for p in y_pred])
+            true_positive = np.sum(np.dot(c_true, c_pred))
+            false_positive = np.sum(np.dot((1 - c_true),  c_pred))
+            if true_positive + false_positive == 0:
+                continue
+            precision += true_positive / (true_positive + false_positive)
+        return precision / len(classes)
+    def calculate_recall(self, y_true, predictions):
+        true_positive = np.sum(predictions * y_true)
+        false_negative = np.sum((1 - predictions) * y_true)
+        return true_positive / (true_positive + false_negative)
+
+    def cross_entropy(self, y_true, y_pred):
+        # add epsilon to prevent log(0)
+        epsilon = 10 ** -100
+        return -np.sum(y_true * np.log(y_pred + epsilon))
+
+    def cross_entropy_grad(self, y_true, y_pred):
+        # add epsilon to prevent log(0)
+        epsilon = 10 ** -100
+        return -y_true / (y_pred + epsilon)

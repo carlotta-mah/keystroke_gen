@@ -51,7 +51,6 @@ def read_keystroke_data(pattern, limit=None):
     # Find files matching the specified pattern
     file_list = glob.glob(pattern)
     file_list = file_list[:limit or len(file_list)]
-    print(file_list)
 
     # Read the data from each file and concatenate into a single DataFrame
     keystroke_df = pd.concat([pd.read_csv(file, sep='\t',
