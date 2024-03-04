@@ -63,7 +63,6 @@ def read_keystroke_data(pattern, limit=None):
     return keystroke_df
 
 
-# Step 2: Data preprocessing
 # todo: encoding in sequences
 def preprocess_data(keystroke_df, train_split=10):
     '''Preprocess keystroke data.
@@ -98,7 +97,7 @@ def preprocess_data(keystroke_df, train_split=10):
         lambda x: x.sort_values('PRESS_TIME')).reset_index(drop=True)
     return extract_features(keystroke_series)
 
-
+# helper function to scale features around zero
 def scale_features(keystroke_df):
     # Calculate mean and standard deviation for each feature
     mean_values = keystroke_df.mean()
@@ -109,7 +108,7 @@ def scale_features(keystroke_df):
 
     return scaled_features
 
-
+# one-hot-encoding
 def encode_participant_ids(y: np.ndarray) -> np.ndarray:
     # Extract unique participant IDs from the second column of y
     participant_ids = np.unique(y)

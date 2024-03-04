@@ -1,7 +1,15 @@
 # Implementation document
-## Introduction
 This document is a summary of the implementation of the neural network. 
 It is a part of the final project for the course "Algorithms and AI" at the University of Helsinki. 
+
+## Data processing
+The data processor is responsible for processing the keystroke data in the dataset by Dhakal et al. [0]: https://userinterfaces.aalto.fi/136Mkeystrokes/#sect2.
+In the provided dataset we find war keystroke data that consists of key press and key release times for each keystroke. In one file of keystroke data we find the data of one participant.
+- `read_keystroke_data`: Read the raw keystroke data and store it in pandas dataframe
+- `save_keystroke_dataset`: Saves the processed keystroke data in pytorch datasets. Here, we use the custom Dataset class `KeystrokeDataset`
+- `preprocess_data`: This function provides scaled keystroke data that is grouped into sentences.
+- `encode_participant_ids`: Used for one-hot-encoding
+- `extract_features`: Calculates features from preprocessed keystroke data
 
 ## Neural network
 The main part of this project, neural network, is implemented in the file `neural_network.py`. I have implemented a class called `NeuralNetwork` which is a feedforward neural network.
