@@ -17,12 +17,20 @@ To run the program, you may to run the `main.py` file. You can do this by runnin
 
 ```src/python main.py```
 
-You may also run the program using the Jupyter notebook [ks_model_interact.ipynb](..%2Fsrc%2Fks_model_interact.ipynb).
+However, the *recommended way* to run the program is using the Jupyter notebook [ks_model_interact.ipynb](..%2Fsrc%2Fks_model_interact.ipynb).
 
-## Testing
-To run the tests, you may run the following command in the terminal: 
+## How the different funcitonalites are used
+### Data Preprocessing
+The data preprocessing is done in the `data_reader.py` file. The data is read from the csv file and preprocessed. 
+The preprocessing includes removing the columns that are not needed, normalizing the data, and one-hot encoding the labels, and feature engineering. 
 
-```coverage run -m pytest```
+### Model Training
+The model training is done in the `neural_network.py` file. The model is trained using the `train` method.
+The `train` method calls the `forward` and `backward` methods to propagate the input data through the network.
 
-Or run the tests via github actions on the main page of the repository.
+### Evaluation
+We use Accuracy and Precision metrics to evaluate the model. The evaluation is done in the `neural_network.py` file.
+
+All these functionalies are used in the `ks_model_interact.ipynb` file and can be assessed there.
+
 
