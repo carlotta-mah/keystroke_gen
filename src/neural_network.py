@@ -25,7 +25,7 @@ class NeuralNetwork:
                  file=None,
                  layer_structure=None,
                  learning_rate=0.01,
-                 activation='sigmoid',
+                 activation='relu',
                  validation_split=0.2,
                  ):
         self._batch_size = 32
