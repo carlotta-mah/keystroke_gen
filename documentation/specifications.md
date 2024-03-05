@@ -9,7 +9,7 @@
 The conventional approach of using CAPTCHA mechanisms to detect bots is loosing relevance, as bots adeptly enhance their image processing capabilities (e.g. [Jun-Yan Zhu et al., 2017](https://openaccess.thecvf.com/content_iccv_2017/html/Zhu_Unpaired_Image-To-Image_Translation_ICCV_2017_paper.html)). Countering this, biometric data may be used to distinguish between bots and humans. 
 Keystroke dynamics have been successfully used for this task [Daniel DeAlcala et al., 2023](https://openaccess.thecvf.com/content/CVPR2023W/Biometrics/html/DeAlcala_BeCAPTCHA-Type_Biometric_Keystroke_Data_Generation_for_Improved_Bot_Detection_CVPRW_2023_paper.html)
 
-For this project I plan to develop a neural network capable of classifying keystrokes of a specific typist to help authenticate that user.
+For this project I plan to develop a neural network capable of classifying keystrokes of different typists to help authenticate the users.
 
 Training data can be obtained in this [dataset by Vivek Dhakal et al](https://userinterfaces.aalto.fi/136Mkeystrokes/).
 
@@ -24,7 +24,7 @@ For my approach I have chosen to implement a feed forward neural network. For th
 7. Training Loop: Iterate through your dataset to train the model.
 8. Prediction: Use the trained model for predictions.
 
-The model will be accessible through an AI, that allows demonstration and manual testing.
+The model will be accessible through a UI, that allows demonstration and manual testing.
 
 ## Complexity
 
