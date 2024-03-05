@@ -60,18 +60,18 @@ def test_save_keystroke_dataset():
 
 def test_get_data():
     # if file exsists already, delete it
-    if os.path.exists('src/test/data/train_test_dataset.pt'):
-        os.remove('src/test/data/train_test_dataset.pt')
-    if os.path.exists('src/test/data/classify_test_dataset.pt'):
-        os.remove('src/test/data/classify_test_dataset.pt')
+    if os.path.exists('data/train_test_dataset.pt'):
+        os.remove('data/train_test_dataset.pt')
+    if os.path.exists('data/classify_test_dataset.pt'):
+        os.remove('data/classify_test_dataset.pt')
     data_t = [1, 1, 1, 0, 0, 0]
     label_t = [0, 0, 0, 1, 1, 1]
     ks = KeystrokeDataset(data_t, label_t)
-    torch.save(ks, 'src/test/data/train_test_dataset.pt')
+    torch.save(ks, 'data/train_test_dataset.pt')
     data_c = [0, 0, 0, 0, 0, 0]
     label_c = [0, 0, 0, 1, 1, 1]
     ks = KeystrokeDataset(data_c, label_c)
-    torch.save(ks, 'src/test/data/classify_test_dataset.pt')
+    torch.save(ks, 'data/classify_test_dataset.pt')
 
     cd = get_classify_data(filename='test_dataset.pt', dir='data')
     td = get_train_data(filename='test_dataset.pt', dir='data')

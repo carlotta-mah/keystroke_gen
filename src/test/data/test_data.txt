@@ -1,0 +1,26 @@
+PARTICIPANT_ID	TEST_SECTION_ID	SENTENCE	USER_INPUT	KEYSTROKE_ID	PRESS_TIME	RELEASE_TIME	LETTER	KEYCODE
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923262	1476488368032	1476488368193	SHIFT	16
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923259	1476488368090	1476488368178	I	73
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923265	1476488368225	1476488368345	 	32
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923267	1476488368449	1476488368585	a	65
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923269	1476488368577	1476488368665	m	77
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923271	1476488368721	1476488368801	 	32
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923281	1476488368881	1476488369002	o	79
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923288	1476488368978	1476488369113	n	78
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923291	1476488369097	1476488369185	 	32
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923294	1476488369217	1476488369369	a	65
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923322	1476488369345	1476488369425	 	32
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923328	1476488369673	1476488369761	p	80
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923331	1476488369897	1476488369977	l	76
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923335	1476488370065	1476488370201	a	65
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923338	1476488370177	1476488370249	n	78
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923340	1476488370329	1476488370409	e	69
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923366	1476488370665	1476488370809	,	188
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923368	1476488370769	1476488370881	 	32
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923371	1476488371049	1476488371169	s	83
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923373	1476488371137	1476488371201	o	79
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923375	1476488371409	1476488371529	r	82
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923489	1476488371737	1476488371833	r	82
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923490	1476488371969	1476488372057	y	89
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923491	1476488372385	1476488372537	.	190
+330100	3555997	I am on a plane, sorry.	I am on a plane, sorry. 	168923492	1476488372513	1476488372633	 	32
