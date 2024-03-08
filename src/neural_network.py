@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 
+
 def softmax(x):
     exps = np.exp(x)
     return exps / np.sum(exps, axis=1, keepdims=True)
@@ -19,6 +20,7 @@ def softmax(x):
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
+
 
 class NeuralNetwork:
     def __init__(self,
@@ -42,10 +44,9 @@ class NeuralNetwork:
             self._losses: Dict[str, list] = {"train": [], "validation": []}
             self._validation_split = validation_split
 
-
     def _initialize_weights_and_biases(self):
         self.biases = [np.ones((1, size)) for size in self.layer_sizes[1:]]
-        self.weights = [np.random.randn(self.layer_sizes[i-1], self.layer_sizes[i]) for i in
+        self.weights = [np.random.randn(self.layer_sizes[i - 1], self.layer_sizes[i]) for i in
                         range(1, self.layer_count)]
 
     def _activation_function(self, x):
@@ -66,6 +67,9 @@ class NeuralNetwork:
             return np.where(x > 0, 1, 0)
         elif self.activation == 'tanh':
             return 1 - np.power(x, 2)
+        else:
+            raise ValueError("Invalid activation function. Choose from 'sigmoid', 'relu', or 'tanh'.")
+
 
     # Propagate the input data through the neural network, compute predictions
     # X is the input matrix
@@ -92,7 +96,7 @@ class NeuralNetwork:
         deltas = np.multiply(error, (activations[-1]))
         for i in reversed(range(self.layer_count - 1)):
             if i < self.layer_count - 2:
-                deltas = np.multiply(deltas, self._activation_derivative(activations[i+1]))
+                deltas = np.multiply(deltas, self._activation_derivative(activations[i + 1]))
 
             w_pre = activations[i].T @ deltas
             b_pre = np.mean(deltas)
@@ -130,7 +134,7 @@ class NeuralNetwork:
                     # Forward pass
                     pred, activations = self.forward(x_batch)
                     # Calculate loss
-                    batch_loss = self.cross_entropy(y_batch, pred)/len(x_batch)
+                    batch_loss = self.cross_entropy(y_batch, pred) / len(x_batch)
                     # batch_loss = self.categorical_cross_entropy(y_batch, pred)
                     epoch_losses.append(batch_loss)
                     # Backward pass
@@ -142,7 +146,7 @@ class NeuralNetwork:
             self._losses["train"].append(train_loss)
 
             validation_pred, _ = self.forward(X_v)
-            validation_loss = self.cross_entropy(y_v, validation_pred)/len(X_v)
+            validation_loss = self.cross_entropy(y_v, validation_pred) / len(X_v)
             self._losses["validation"].append(validation_loss)
 
             # Every 100 epochs, print loss.
@@ -152,13 +156,16 @@ class NeuralNetwork:
     def get_prediction(self, X):
         pred, _ = self.forward(X)
         # set the highest probability to 1 and the rest to 0
-        m = np.zeros_like(pred) # alternatively, with multiple 1:  pred = (pred == pred.max(axis=1)[:,None]).astype(int)
+        m = np.zeros_like(
+            pred)  # alternatively, with multiple 1:  pred = (pred == pred.max(axis=1)[:,None]).astype(int)
         m[np.arange(len(pred)), pred.argmax(1)] = 1
         return m
 
     def save_model(self, filename):
-        model = {'weights': self.weights, 'biases': self.biases, 'activation': self.activation, 'layer_sizes': self.layer_sizes,
-                 'losses': self._losses, 'learning_rate': self.learning_rate, 'batch_size': self._batch_size}
+        model = {'weights': self.weights, 'biases': self.biases, 'activation': self.activation,
+                 'layer_sizes': self.layer_sizes,
+                 'losses': self._losses, 'learning_rate': self.learning_rate, 'batch_size': self._batch_size,
+                 'validation_split': self._validation_split}
         np.save(filename, model)
 
     def load_model(self, filename):
@@ -171,6 +178,7 @@ class NeuralNetwork:
         self._losses = model.item().get('losses')
         self.learning_rate = model.item().get('learning_rate')
         self._batch_size = model.item().get('batch_size')
+        self._validation_split = model.item().get('validation_split')
         return
 
     def plot_learning(self):
@@ -183,6 +191,7 @@ class NeuralNetwork:
 
     def calculate_accuracy(self, y_true, predictions):
         return np.mean(np.argmax(predictions, axis=1) == np.argmax(y_true, axis=1))
+
     def calculate_macro_precision(self, y_true, y_pred):
         y_true = np.argmax(y_true, axis=1)
         y_pred = np.argmax(y_pred, axis=1)
@@ -192,15 +201,11 @@ class NeuralNetwork:
             c_true = np.array([1 if p == c else 0 for p in y_true])
             c_pred = np.array([1 if p == c else 0 for p in y_pred])
             true_positive = np.sum(np.dot(c_true, c_pred))
-            false_positive = np.sum(np.dot((1 - c_true),  c_pred))
+            false_positive = np.sum(np.dot((1 - c_true), c_pred))
             if true_positive + false_positive == 0:
                 continue
             precision += true_positive / (true_positive + false_positive)
         return precision / len(classes)
-    def calculate_recall(self, y_true, predictions):
-        true_positive = np.sum(predictions * y_true)
-        false_negative = np.sum((1 - predictions) * y_true)
-        return true_positive / (true_positive + false_negative)
 
     def cross_entropy(self, y_true, y_pred):
         # add epsilon to prevent log(0)

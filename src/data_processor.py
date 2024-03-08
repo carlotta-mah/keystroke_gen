@@ -5,177 +5,176 @@ import os
 import sys
 import pandas as pd
 import glob
-from sklearn.model_selection import train_test_split
 import numpy as np
-from torch.utils.data import Dataset
 import torch
 
 from src.ks_dataset import KeystrokeDataset
 
 
-def get_train_data(filename='keystroke_dataset.pt', dir: str = '../data'):
-    return torch.load(dir + '/train_' + filename)
+class KeystrokeDataReader:
+    def __init__(self):
+        pass
 
+    # Function to get share of previously saved data
+    def get_train_data(self, filename='keystroke_dataset.pt', dir: str = '../data'):
+        return torch.load(dir + '/train_' + filename)
 
-def get_classify_data(filename = 'keystroke_dataset.pt', dir: str = '../data'):
-    return torch.load(dir + '/classify_' + filename )
+    # Function to get share of previously saved data
+    def get_classify_data(self, filename='keystroke_dataset.pt', dir: str = '../data'):
+        return torch.load(dir + '/classify_' + filename)
 
+    # saves preprocessed data in easlily readable format (torch dataset)
+    def save_keystroke_dataset(self, df: pd.DataFrame, train_split: int = 10, filename: str = 'keystroke_dataset.pt',
+                               dir: str = '../data'):
+        sentence_ks_data = self.preprocess_data(df)
+        # split series into 10 train sentences and the other sentences
+        grouped_ks_data = sentence_ks_data.groupby('PARTICIPANT_ID')
 
-def save_keystroke_dataset(df: pd.DataFrame, train_split: int = 10, filename: str = 'keystroke_dataset.pt', dir: str = '../data'):
-    sentence_ks_data = preprocess_data(df)
-    # split series into 10 train sentences and the other sentences
-    grouped_ks_data = sentence_ks_data.groupby('PARTICIPANT_ID')
+        # for each series in groupby, take the first 10 sentences
+        train_sentence_ks_data, classify_ks_data = grouped_ks_data.head(10).reset_index(
+            drop=True), grouped_ks_data.tail(
+            -10).reset_index(drop=True)
+        train_dataset, classify_dataset = (
+            KeystrokeDataset(train_sentence_ks_data.drop(columns=['PARTICIPANT_ID'], axis=1).values,
+                             train_sentence_ks_data['PARTICIPANT_ID'].values),
+            KeystrokeDataset(classify_ks_data.drop(columns=['PARTICIPANT_ID'], axis=1).values,
+                             classify_ks_data['PARTICIPANT_ID'].values))
+        torch.save(train_dataset, dir + '/train_' + filename)
+        torch.save(classify_dataset, dir + '/classify_' + filename)
 
-    # for each series in groupby, take the first 10 sentences
-    train_sentence_ks_data, classify_ks_data = grouped_ks_data.head(10).reset_index(drop=True), grouped_ks_data.tail(
-        -10).reset_index(drop=True)
-    train_dataset, classify_dataset = (
-    KeystrokeDataset(train_sentence_ks_data.drop(columns=['PARTICIPANT_ID'], axis=1).values,
-                     train_sentence_ks_data['PARTICIPANT_ID'].values),
-    KeystrokeDataset(classify_ks_data.drop(columns=['PARTICIPANT_ID'], axis=1).values,
-                     classify_ks_data['PARTICIPANT_ID'].values))
-    torch.save(train_dataset, dir + '/train_'+filename)
-    torch.save(classify_dataset, dir +'/classify_' + filename)
+    # reads keystroke data from file
+    def read_keystroke_data(self, pattern='*_keystrokes.txt', limit=None):
+        '''Read keystroke data from files matching the specified pattern and return as a DataFrame.
+        '''
 
+        # columns that we want to process
+        columns_to_keep = ['PARTICIPANT_ID', 'TEST_SECTION_ID', 'PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']
 
-def read_keystroke_data(pattern='*_keystrokes.txt', limit=None):
-    '''Read keystroke data from files matching the specified pattern and return as a DataFrame.
-    '''
+        print('Reading keystroke data from files matching the pattern:', pattern)
+        print("current working directory: ", os.getcwd())
+        # Find files matching the specified pattern
+        file_list = glob.glob(pattern)
+        file_list = file_list[:limit or len(file_list)]
 
-    # columns that we want to process
-    columns_to_keep = ['PARTICIPANT_ID', 'TEST_SECTION_ID', 'PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']
+        if len(file_list) == 0:
+            sys.exit('No files found matching the specified pattern.')
+        if len(file_list) == 1:
+            keystroke_df = pd.read_csv(file_list[0], sep='\t',
+                                       encoding='latin-1',
+                                       usecols=columns_to_keep,
+                                       quoting=csv.QUOTE_NONE,
+                                       )
+        else:
+            # Read the data from each file and concatenate into a single DataFrame
+            keystroke_df = pd.concat([pd.read_csv(file, sep='\t',
+                                                  encoding='latin-1',
+                                                  usecols=columns_to_keep,
+                                                  quoting=csv.QUOTE_NONE,
+                                                  )
+                                      for file in file_list], ignore_index=True)
 
-    print('Reading keystroke data from files matching the pattern:', pattern)
-    print("current working directory: ", os.getcwd())
-    # Find files matching the specified pattern
-    file_list = glob.glob(pattern)
-    file_list = file_list[:limit or len(file_list)]
+        return keystroke_df
 
-    if len(file_list) == 0:
-        sys.exit('No files found matching the specified pattern.')
-    if len(file_list) == 1:
-        keystroke_df = pd.read_csv(file_list[0], sep='\t',
-                                  encoding='latin-1',
-                                  usecols=columns_to_keep,
-                                  quoting=csv.QUOTE_NONE,
-                                  )
-    else:
-        # Read the data from each file and concatenate into a single DataFrame
-        keystroke_df = pd.concat([pd.read_csv(file, sep='\t',
-                                              encoding='latin-1',
-                                              usecols=columns_to_keep,
-                                              quoting=csv.QUOTE_NONE,
-                                              )
-                                  for file in file_list], ignore_index=True)
+    # Function that provides preprocessed data to outside
+    def preprocess_data(self, keystroke_df):
+        '''Preprocess keystroke data.
+        Features are scaled and additional features are extracted.
+        '''
 
-    return keystroke_df
+        # Create a unique sequence ID for each group
+        keystroke_df['SEQUENCE_ID'] = keystroke_df['PARTICIPANT_ID'].astype(str) + keystroke_df[
+            'TEST_SECTION_ID'].astype(str)
+        keystroke_df = keystroke_df.drop(columns=['TEST_SECTION_ID'])
 
+        # Convert timestamps to milliseconds
+        keystroke_df['PRESS_TIME'] = pd.to_numeric(keystroke_df['PRESS_TIME'], errors='coerce')
+        keystroke_df['RELEASE_TIME'] = pd.to_numeric(keystroke_df['RELEASE_TIME'], errors='coerce')
+        # Convert keycodes to integers
+        keystroke_df['KEYCODE'] = pd.to_numeric(keystroke_df['KEYCODE'], errors='coerce')
 
-# todo: encoding in sequences
-def preprocess_data(keystroke_df):
-    '''Preprocess keystroke data.
-    Features are scaled and additional features are extracted.
-    :param train_split: '''
+        # Drop rows with missing values
+        keystroke_df = keystroke_df.dropna()
 
-    # Create a unique sequence ID for each group
-    keystroke_df['SEQUENCE_ID'] = keystroke_df['PARTICIPANT_ID'] + keystroke_df['TEST_SECTION_ID']
-    keystroke_df = keystroke_df.drop(columns=['TEST_SECTION_ID'])
+        # Feature scaling
+        keystroke_df.loc[:, ['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']] = self._scale_features(
+            keystroke_df[['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']])
 
-    # Convert timestamps to milliseconds
-    keystroke_df['PRESS_TIME'] = pd.to_numeric(keystroke_df['PRESS_TIME'], errors='coerce')
-    keystroke_df['RELEASE_TIME'] = pd.to_numeric(keystroke_df['RELEASE_TIME'], errors='coerce')
-    # Convert keycodes to integers
-    keystroke_df['KEYCODE'] = pd.to_numeric(keystroke_df['KEYCODE'], errors='coerce')
+        # Calculate sequence start time for each group
 
-    # Drop rows with missing values
-    keystroke_df = keystroke_df.dropna()
+        keystroke_df['SEQUENCE_START_TIME'] = keystroke_df.groupby(['SEQUENCE_ID'])['PRESS_TIME'].transform('min')
 
-    # Feature scaling
-    keystroke_df.loc[:, ['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']] = scale_features(
-        keystroke_df[['PRESS_TIME', 'RELEASE_TIME', 'KEYCODE']])
+        # Calculate press time relative to sequence start time and press duration
+        keystroke_df['PRESS_TIME_RELATIVE'] = keystroke_df['PRESS_TIME'] - keystroke_df['SEQUENCE_START_TIME']
+        keystroke_df['PRESS_DURATION'] = keystroke_df['RELEASE_TIME'] - keystroke_df['PRESS_TIME']
+        keystroke_series = keystroke_df.groupby(['SEQUENCE_ID']).apply(
+            lambda x: x.sort_values('PRESS_TIME')).reset_index(drop=True)
+        return self._extract_features(keystroke_series)
 
-    # Calculate sequence start time for each group
+    # helper function to scale features around zero
+    def _scale_features(self, keystroke_df):
+        # Calculate mean and standard deviation for each feature
+        mean_values = keystroke_df.mean()
+        std_values = keystroke_df.std()
 
-    keystroke_df['SEQUENCE_START_TIME'] = keystroke_df.groupby(['SEQUENCE_ID'])['PRESS_TIME'].transform('min')
+        # Scale each feature
+        scaled_features = (keystroke_df - mean_values) / std_values
 
-    # Calculate press time relative to sequence start time and press duration
-    keystroke_df['PRESS_TIME_RELATIVE'] = keystroke_df['PRESS_TIME'] - keystroke_df['SEQUENCE_START_TIME']
-    keystroke_df['PRESS_DURATION'] = keystroke_df['RELEASE_TIME'] - keystroke_df['PRESS_TIME']
-    keystroke_series = keystroke_df.groupby(['SEQUENCE_ID']).apply(
-        lambda x: x.sort_values('PRESS_TIME')).reset_index(drop=True)
-    return extract_features(keystroke_series)
+        return scaled_features
 
-# helper function to scale features around zero
-def scale_features(keystroke_df):
-    # Calculate mean and standard deviation for each feature
-    mean_values = keystroke_df.mean()
-    std_values = keystroke_df.std()
+    # Function to extract timing and keycode-based features from a series of keystrokes
+    def _extract_features(self, keystrokes_series):
+        '''Extract keystroke features from a series of keystrokes.'''
 
-    # Scale each feature
-    scaled_features = (keystroke_df - mean_values) / std_values
+        # Group keystrokes by sequence ID
+        grouped_df = keystrokes_series.groupby('SEQUENCE_ID')
+        extracted_features = []
+        for sequence_id, group in grouped_df:
+            if len(group) < 2:
+                continue
+            # Extract press times, durations, and keycodes for the current sequence ID
+            press_times = group['PRESS_TIME'].values
+            press_durations = group['PRESS_DURATION'].values
+            keycodes = group['KEYCODE'].values
 
-    return scaled_features
+            # Calculate duration for each keystroke
+            # Calculate inter-key intervals (time between consecutive key presses)
+            # if there is only one key press, the inter-key interval is 0
+            inter_key_intervals = np.diff(press_times)
 
-# one-hot-encoding
-def encode_participant_ids(y: np.ndarray) -> np.ndarray:
-    # one hot encoding
-    return np.eye(len(np.unique(y)))[y]
+            # Compute statistical characteristics of durations and inter-key intervals
+            mean_duration = np.mean(press_durations)
+            std_duration = np.std(press_durations)
+            min_duration = np.min(press_durations)
+            max_duration = np.max(press_durations)
 
+            mean_inter_key_interval = np.mean(inter_key_intervals)
+            std_inter_key_interval = np.std(inter_key_intervals)
+            min_inter_key_interval = np.min(inter_key_intervals)
+            max_inter_key_interval = np.max(inter_key_intervals)
 
-# Function to extract timing and keycode-based features from a series of keystrokes
-def extract_features(keystrokes_series):
-    '''Extract keystroke features from a series of keystrokes.'''
+            # Extract information about keycodes
+            unique_keycodes, counts = np.unique(keycodes, return_counts=True)
+            most_common_keycode = unique_keycodes[np.argmax(counts)] if len(counts) > 1 else counts[0]
+            num_unique_keycodes = len(unique_keycodes)
 
-    # Group keystrokes by sequence ID
-    grouped_df = keystrokes_series.groupby('SEQUENCE_ID')
-    extracted_features = []
-    for sequence_id, group in grouped_df:
-        if len(group) < 2:
-            continue
-        # Extract press times, durations, and keycodes for the current sequence ID
-        press_times = group['PRESS_TIME'].values
-        press_durations = group['PRESS_DURATION'].values
-        keycodes = group['KEYCODE'].values
+            # Store features in a dictionary
+            features = {
+                'PARTICIPANT_ID': group['PARTICIPANT_ID'].values[0],
+                'mean_duration': mean_duration,
+                'std_duration': std_duration,
+                'min_duration': min_duration,
+                'max_duration': max_duration,
+                'mean_inter_key_interval': mean_inter_key_interval,
+                'std_inter_key_interval': std_inter_key_interval,
+                'min_inter_key_interval': min_inter_key_interval,
+                'max_inter_key_interval': max_inter_key_interval,
+                'most_common_keycode': most_common_keycode,
+                'num_unique_keycodes': num_unique_keycodes
+            }
 
-        # Calculate duration for each keystroke
-        # Calculate inter-key intervals (time between consecutive key presses)
-        # if there is only one key press, the inter-key interval is 0
-        inter_key_intervals = np.diff(press_times)
+            extracted_features.append(features)
 
-        # Compute statistical characteristics of durations and inter-key intervals
-        mean_duration = np.mean(press_durations)
-        std_duration = np.std(press_durations)
-        min_duration = np.min(press_durations)
-        max_duration = np.max(press_durations)
+        # Convert the list of dictionaries to a pandas DataFrame
+        extracted_features_df = pd.DataFrame(extracted_features)
 
-        mean_inter_key_interval = np.mean(inter_key_intervals)
-        std_inter_key_interval = np.std(inter_key_intervals)
-        min_inter_key_interval = np.min(inter_key_intervals)
-        max_inter_key_interval = np.max(inter_key_intervals)
-
-        # Extract information about keycodes
-        unique_keycodes, counts = np.unique(keycodes, return_counts=True)
-        most_common_keycode = unique_keycodes[np.argmax(counts)]
-        num_unique_keycodes = len(unique_keycodes)
-
-        # Store features in a dictionary
-        features = {
-            'PARTICIPANT_ID': group['PARTICIPANT_ID'].values[0],
-            'mean_duration': mean_duration,
-            'std_duration': std_duration,
-            'min_duration': min_duration,
-            'max_duration': max_duration,
-            'mean_inter_key_interval': mean_inter_key_interval,
-            'std_inter_key_interval': std_inter_key_interval,
-            'min_inter_key_interval': min_inter_key_interval,
-            'max_inter_key_interval': max_inter_key_interval,
-            'most_common_keycode': most_common_keycode,
-            'num_unique_keycodes': num_unique_keycodes
-        }
-
-        extracted_features.append(features)
-
-    # Convert the list of dictionaries to a pandas DataFrame
-    extracted_features_df = pd.DataFrame(extracted_features)
-
-    return extracted_features_df
+        return extracted_features_df

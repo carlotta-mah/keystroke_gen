@@ -8,6 +8,7 @@ from src.neural_network import NeuralNetwork
 from src.neural_network import softmax
 from src.neural_network import sigmoid
 from itertools import chain
+from copy import deepcopy
 
 
 def test_neural_network():
@@ -72,6 +73,15 @@ def test_backward_propagation_shapes():
         assert not np.allclose(nn.biases[i], np.zeros_like(nn.biases[i]))
 
 
+def test_get_prediction():
+    nn = NeuralNetwork(file=None, layer_structure=[2, 2, 2], learning_rate=0.0002, activation='sigmoid')
+    nn.weights = [np.array([[0.1, 0.2], [0.3, 0.4]]), np.array([[0.5, 0.7], [0.6, 0.8]])]
+    nn.biases = [np.array([0.25, 0.25]), np.array([0.35, 0.35])]
+    X1 = np.array([[0.1, 0.5]])
+    expected = [[0, 1]]
+    assert (nn.get_prediction(X1) == expected).all()
+
+
 def test_backward_propagation():
     nn = NeuralNetwork(file=None, layer_structure=[2, 2, 2], learning_rate=0.0002, activation='sigmoid')
     X1 = np.array([[0.1, 0.5]])
@@ -89,6 +99,18 @@ def test_backward_propagation():
     assert (0.00001 > np.abs(weights - expected_weights)).all
 
 
+def test_train():
+    nn = NeuralNetwork(file=None, layer_structure=[2, 2, 2], learning_rate=0.0002, activation='sigmoid')
+    X1 = np.full((100, 2), 1)
+    X = np.append(X1, (np.full((100, 2), 2)))
+    y1 = np.full((100, 2), [1,0])
+    y = np.append(y1, np.full((100, 2), [0,1]), axis=0)
+    weights0 = deepcopy(nn.weights)
+
+    nn.train(X1, y1, 1000)
+
+    assert ((w0 != w).all() for w0, w in zip(weights0, nn.weights))
+    assert len(nn._losses['train']) == len(nn._losses['validation']) == 1000
 def test_save_load_model():
     # Create a neural network instance
     layer_structure = [4, 10, 10, 1]
@@ -116,6 +138,19 @@ def test_save_load_model():
     assert nn._validation_split == 0.2
     assert nn._losses == {'train': train_loss, 'validation': validation_loss}
 
+    #load model from file in constructor
+    nn_by_file = NeuralNetwork(file='model.npy')
+
+    # Check if the model was loaded correctly
+    assert nn_by_file.layer_sizes == layer_structure
+    assert len(nn_by_file.weights) == len(layer_structure) - 1
+    assert len(nn_by_file.biases) == len(layer_structure) - 1
+    assert nn_by_file.activation == 'sigmoid'
+    assert nn_by_file.learning_rate == 0.0002
+    assert nn_by_file._batch_size == 32
+    assert nn_by_file._validation_split == 0.2
+    assert nn_by_file._losses == {'train': train_loss, 'validation': validation_loss}
+
 
 def test_softmax():
     # test data from https://stackoverflow.com/questions/47372685/softmax-function-in-neural-network-python
@@ -129,7 +164,10 @@ def test_softmax():
 def test_sigmoid():
     test_array = np.array([0.26894142, 0.73105858])
     test_output = [0.566833, 0.675038]
-    print(sigmoid(test_array))
+    assert (np.allclose(sigmoid(test_array), test_output))
+
+    test_array = np.array([-0.2, 0.7])
+    test_output = [0.450166, 0.668187]
     assert (np.allclose(sigmoid(test_array), test_output))
 
 
@@ -152,6 +190,12 @@ def test_cross_entropy_grad():
     expected_array = np.array([[0], [-1.17647059], [0], [0]])
     assert (np.allclose(grad, expected_array))
 
+    y = np.array([[0, 1, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    pred = np.array([[0.05, 0.85, 0.1], [0.05, 0.85, 0.1], [0.05, 0.85, 0.1], [0.05, 0.85, 0.1]])
+    grad = nn.cross_entropy_grad(y, pred)
+    expected_array = np.array([[0, -1.17647059, 0], [-20, 0, 0], [0, -1.17647059, 0], [0, 0, -10]])
+    assert (np.allclose(grad, expected_array))
+
 
 def test_macro_precision():
     nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
@@ -160,3 +204,74 @@ def test_macro_precision():
     precision = nn.calculate_macro_precision(y, pred)
     assert precision == 0.5
 
+def test_activation_function():
+    nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
+    x = np.array([0.1, 0.2, 0.3, 0.4])
+    assert (nn._activation_function(x) == sigmoid(x)).all()
+    nn.activation = 'relu'
+    assert (nn._activation_function(x) == np.maximum(0, x)).all()
+    nn.activation = 'tanh'
+    assert (nn._activation_function(x) == np.tanh(x)).all()
+    nn.activation = 'hello'
+    found_exception = False
+    try:
+        (nn._activation_function(x))
+    except:
+        found_exception = True
+    assert found_exception
+
+def test_activation_deriavtive():
+    nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
+    x = np.array([0.1, 0.2, 0.3, 0.4])
+    assert (nn._activation_derivative(x) == 1/(1+np.exp(x)) * (1-(1/ (1+np.exp(x))))).all()
+    nn.activation = 'relu'
+    assert (nn._activation_derivative(x) == (x > 0) * 1).all()
+    nn.activation = 'tanh'
+    assert (nn._activation_derivative(x) == (1 - np.power(x, 2))).all()
+    nn.activation = 'hello'
+    found_exception = False
+    try:
+        (nn._activation_derivative(x))
+    except:
+        found_exception = True
+    assert found_exception
+def test_mse():
+    nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
+    y = np.array([[0, 1, 0, 0]])
+    pred = np.array([[0.05, 0.85, 0.1, 0.1]])
+    loss = nn.calculate_mse(y, pred)
+    expected_losses = np.array([[0.0025, 0.0225, 0.01, 0.01]])
+    assert (np.allclose(loss, expected_losses))
+
+def test_accuracy():
+    nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
+    y = np.array([[0, 1, 0, 0]])
+    pred = np.array([[0.05, 0.85, 0.1, 0.1]])
+    accuracy = nn.calculate_accuracy(y, pred)
+    assert accuracy == 1.0
+
+def test_macro_precision():
+    nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
+    y = np.array([[0, 1, 0, 0]])
+    pred = np.array([[0.05, 0.85, 0.1, 0.1]])
+    precision = nn.calculate_macro_precision(y, pred)
+    assert precision == 1.0
+
+    y = np.array([[0, 1, 0, 0],
+                  [0, 0, 1, 0],
+                  [0, 1, 0, 0],
+                  [0, 1, 0, 0]])
+    pred = np.array([[0.05, 0.85, 0.1, 0.1],
+                     [0.05, 0.85, 0.1, 0.1],
+                     [0.05, 0.85, 0.1, 0.1],
+                     [0.05, 0.85, 0.1, 0.1]])
+    precision = nn.calculate_macro_precision(y, pred)
+    assert precision == 0.375
+
+def test_abs_loss():
+    nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
+    y = np.array([[0, 1, 0, 0]])
+    pred = np.array([[0.05, 0.85, 0.1, 0.1]])
+    abs_loss = nn.calculate_abs_loss(y, pred)
+    expeced = pred - y
+    assert (abs_loss == expeced).all()

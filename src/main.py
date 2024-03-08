@@ -1,16 +1,6 @@
 import matplotlib
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from neural_network import NeuralNetwork
-import src.data_processor as data_processor
-
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error
 from sklearn.datasets import make_blobs
-import src.data_processor as data_processor
+from src.data_processor import KeystrokeDataReader
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from neural_network import NeuralNetwork
@@ -29,7 +19,7 @@ def run_with_dummy_data():
 
     # one hot encoding for y
     label_encoder = LabelEncoder()
-    y_encoded = data_processor.encode_participant_ids(label_encoder.fit_transform(labels))
+    y_encoded = label_encoder.fit_transform(labels)
 
     # split the data
     X_train, X_test, y_train, y_test = train_test_split(data, y_encoded, stratify=labels, test_size=0.2,
@@ -47,6 +37,7 @@ def run_with_dummy_data():
     nn.plot_learning()
 
 def fit_with_keystroke_data():
+    data_processor = KeystrokeDataReader()
     # Load the dataset
     dataset = data_processor.get_train_data()
 
@@ -56,7 +47,7 @@ def fit_with_keystroke_data():
 
     # Encode the target variable (PARTICIPANT_ID) using LabelEncoder
     label_encoder = LabelEncoder()
-    y_encoded = data_processor.encode_participant_ids(label_encoder.fit_transform(y))
+    y_encoded = label_encoder.fit_transform(y)
 
     # Split the dataset into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
@@ -77,6 +68,7 @@ def fit_with_keystroke_data():
 
 if __name__ == "__main__":
     # save keystroke data in dataset
+    data_processor = KeystrokeDataReader()
     keystroke_df = data_processor.read_keystroke_data('../data/Keystrokes/files/*_keystrokes.txt', 1000)
     data_processor.save_keystroke_dataset(keystroke_df, 10)
 
