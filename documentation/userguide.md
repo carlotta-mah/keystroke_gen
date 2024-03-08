@@ -13,6 +13,9 @@ Before running the program, make sure you have the requirements in the `requirem
 To train the model, you need to download the keystrokes dataset by Dhakal et al. [0]: https://userinterfaces.aalto.fi/136Mkeystrokes/#sect2
 This (very large) dataset is not included in the repository. Place the file in the `data` folder and unzip it.
 
+I hae also provided a smaller, preprocessed, share of the data in this repo. If you want to run the model with this data, skip the data preprocessing in
+the Jupyter Notebook.
+
 ## Running the program
 To run the program, you may to run the `main.py` file. You can do this by running the following command in the terminal: 
 

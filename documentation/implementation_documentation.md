@@ -65,6 +65,7 @@ Matrix multiplication has a time complexity of O(n^3) where n is the number of d
 - Use of different optimizers: Add the possibility to use different optimizers in the network.
 - Use of different loss functions: Add the possibility to use different loss functions in the network.
 - Feature engineering: My data does not produce any good results. Possibly, the data needs to get better feature engineering to produce better results.
+- Have a dedicated train and a dedicated validate method 
 
 ## Use of LLMs
 I used ChatGPT to explain the concepts of the neural network and gain better understanding of their functioning. 
