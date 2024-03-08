@@ -1,5 +1,6 @@
 from torch.utils.data import Dataset
 class KeystrokeDataset(Dataset):
+    '''Custom dataset that is used to save processed keystroke data'''
     def __init__(self, data, labels):
         if data is None:
             data = []
@@ -17,5 +18,6 @@ class KeystrokeDataset(Dataset):
         return data, labels
 
     def append_item(self, data_point, label):
+        '''append a data_point and its label to the dataset'''
         self.data.append(data_point)
         self.labels.append(label)

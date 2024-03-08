@@ -10,6 +10,7 @@ from src.ks_dataset import KeystrokeDataset
 
 
 def test_read_keystroke_data():
+    # tests if raw keystroke data can be read
     data_reader = KeystrokeDataReader()
     filename = 'src/test/data/test_data.txt'
     df = data_reader.read_keystroke_data(filename)
@@ -19,6 +20,7 @@ def test_read_keystroke_data():
 
 
 def test_preprocess_data():
+    # Tests data preprocessing. This preprocessing also includes the feature extraction
     data_reader = KeystrokeDataReader()
     # Sample DataFrame with test data
     data = {
@@ -40,6 +42,7 @@ def test_preprocess_data():
 
 
 def test_save_keystroke_dataset():
+    # tests saving the data as custom dataset
     data_reader = KeystrokeDataReader()
     # if file exsists already, delete it
     if os.path.exists('data/train_test_dataset.pt'):
@@ -68,6 +71,7 @@ def test_save_keystroke_dataset():
 
 
 def test_get_classify_data():
+    # tests reading the previously saved data
     data_reader = KeystrokeDataReader()
     # if file exsists already, delete it
     if os.path.exists('data/classify_test_dataset.pt'):
@@ -85,6 +89,7 @@ def test_get_classify_data():
 
 
 def test_get_train_data():
+    # tests reading the previously saved data
     data_reader = KeystrokeDataReader()
     # if file exsists already, delete it
     if os.path.exists('data/train_test_dataset.pt'):
@@ -102,6 +107,8 @@ def test_get_train_data():
 
 
 def test_scale_features():
+    # tests the feature scaling
+
     data_reader = KeystrokeDataReader()
     # Sample DataFrame with test data
     data = {
@@ -114,7 +121,7 @@ def test_scale_features():
     # Call the preprocess_data function
     df_preprocessed = data_reader._scale_features(df)
 
-    # Check if DataFrame matches the expected shape
+    # Check if DataFrame matches the expected values
     assert np.isclose(df_preprocessed['PRESS_TIME'].mean(), 0.0)
     assert np.isclose(df_preprocessed['PRESS_TIME'].std(), 1.0)
     assert np.isclose(df_preprocessed['RELEASE_TIME'].mean(), 0.0)
@@ -124,6 +131,8 @@ def test_scale_features():
 
 
 def test_extract_features():
+    # tests feature extraction
+
     data_reader = KeystrokeDataReader()
     # Sample DataFrame with test data
     data = {
@@ -140,7 +149,7 @@ def test_extract_features():
     # Call the preprocess_data function
     extracted_features_df = data_reader._extract_features(df)
 
-    # Extract features
+    # test if extracted features match expected values
     assert extracted_features_df.shape == (3, 11)  # Expected shape after dropping rows with missing values
     assert extracted_features_df['mean_duration'][0] == np.mean([1000, 1500])
     assert extracted_features_df['std_duration'][0] == np.std([1000, 1500])

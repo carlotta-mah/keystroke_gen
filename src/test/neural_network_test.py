@@ -12,6 +12,8 @@ from copy import deepcopy
 
 
 def test_neural_network():
+    # general test of functioning of model class
+
     # color map for better visualization
     my_cmap = matplotlib.colors.LinearSegmentedColormap.from_list("", ["red", "yellow", "green"])
 
@@ -83,15 +85,21 @@ def test_get_prediction():
 
 
 def test_backward_propagation():
+    # Create a neural network instance
     nn = NeuralNetwork(file=None, layer_structure=[2, 2, 2], learning_rate=0.0002, activation='sigmoid')
     X1 = np.array([[0.1, 0.5]])
     y1 = np.array([[0.05, 0.95]])
+
+    # Set weights and biases
     nn.weights = [np.array([[0.1, 0.2], [0.3, 0.4]]), np.array([[0.5, 0.7], [0.6, 0.8]])]
     nn.biases = [np.array([0.25, 0.25]), np.array([0.35, 0.35])]
+
+    # forward and backward propagation
     pred1, hidden1 = nn.forward(X1)
     loss = nn.calculate_abs_loss(y1, pred1)
-
     nn.backward(hidden1, loss)
+
+    # Check if weights were updated as expected
     expected_weights = np.array([[0.09933517, 0.19919586],
                                  [0.29667583, 0.39597928], [0.45187813, 0.71056392],
                                  [0.55073363, 0.81081516]])
@@ -100,17 +108,26 @@ def test_backward_propagation():
 
 
 def test_train():
+    # Create a neural network instance
     nn = NeuralNetwork(file=None, layer_structure=[2, 2, 2], learning_rate=0.0002, activation='sigmoid')
-    X1 = np.full((100, 2), 1)
-    X = np.append(X1, (np.full((100, 2), 2)))
-    y1 = np.full((100, 2), [1,0])
-    y = np.append(y1, np.full((100, 2), [0,1]), axis=0)
+
+    # generate data
+    X = np.full((100, 2), 1)
+    y = np.full((100, 2), [1,0])
+
+    # copy weights before training
     weights0 = deepcopy(nn.weights)
 
-    nn.train(X1, y1, 1000)
+    # train model
+    nn.train(X, y, 1000)
 
+    # check if weights have been updated
     assert ((w0 != w).all() for w0, w in zip(weights0, nn.weights))
+
+    # check if losses have been calculated
     assert len(nn._losses['train']) == len(nn._losses['validation']) == 1000
+
+
 def test_save_load_model():
     # Create a neural network instance
     layer_structure = [4, 10, 10, 1]
@@ -197,21 +214,19 @@ def test_cross_entropy_grad():
     assert (np.allclose(grad, expected_array))
 
 
-def test_macro_precision():
-    nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
-    y = np.array([[0, 1, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    pred = np.array([[1, 0, 0], [0, 1, 0], [0, 1, 0], [0, 0, 1]])
-    precision = nn.calculate_macro_precision(y, pred)
-    assert precision == 0.5
-
 def test_activation_function():
+    # Create a neural network instance to call its activation functions
     nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
     x = np.array([0.1, 0.2, 0.3, 0.4])
+
+    # test if activation functions are called as expected
     assert (nn._activation_function(x) == sigmoid(x)).all()
     nn.activation = 'relu'
     assert (nn._activation_function(x) == np.maximum(0, x)).all()
     nn.activation = 'tanh'
     assert (nn._activation_function(x) == np.tanh(x)).all()
+
+    # test noon existen activation function
     nn.activation = 'hello'
     found_exception = False
     try:
@@ -221,13 +236,19 @@ def test_activation_function():
     assert found_exception
 
 def test_activation_deriavtive():
+
+    # Create a neural network instance to call grad functions
     nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
     x = np.array([0.1, 0.2, 0.3, 0.4])
+
+    # check if expected functions are called
     assert (nn._activation_derivative(x) == 1/(1+np.exp(x)) * (1-(1/ (1+np.exp(x))))).all()
     nn.activation = 'relu'
     assert (nn._activation_derivative(x) == (x > 0) * 1).all()
     nn.activation = 'tanh'
     assert (nn._activation_derivative(x) == (1 - np.power(x, 2))).all()
+
+    # test with non exsisten function
     nn.activation = 'hello'
     found_exception = False
     try:
@@ -235,28 +256,42 @@ def test_activation_deriavtive():
     except:
         found_exception = True
     assert found_exception
+
+
 def test_mse():
+    # Create a neural network instance and test data
     nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
     y = np.array([[0, 1, 0, 0]])
     pred = np.array([[0.05, 0.85, 0.1, 0.1]])
+
+    # calculate mse
     loss = nn.calculate_mse(y, pred)
     expected_losses = np.array([[0.0025, 0.0225, 0.01, 0.01]])
+
     assert (np.allclose(loss, expected_losses))
 
 def test_accuracy():
+    # Create a neural network instance and test data
     nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
     y = np.array([[0, 1, 0, 0]])
     pred = np.array([[0.05, 0.85, 0.1, 0.1]])
+    #calculate accuracy
     accuracy = nn.calculate_accuracy(y, pred)
+
     assert accuracy == 1.0
 
+
 def test_macro_precision():
+    # Create a neural network instance and test data
     nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
     y = np.array([[0, 1, 0, 0]])
     pred = np.array([[0.05, 0.85, 0.1, 0.1]])
+
+    # calculate macro precision
     precision = nn.calculate_macro_precision(y, pred)
     assert precision == 1.0
 
+    # Create new test data
     y = np.array([[0, 1, 0, 0],
                   [0, 0, 1, 0],
                   [0, 1, 0, 0],
@@ -268,10 +303,24 @@ def test_macro_precision():
     precision = nn.calculate_macro_precision(y, pred)
     assert precision == 0.375
 
+    # Create new test data
+    y = np.array([[0, 1, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    pred = np.array([[1, 0, 0], [0, 1, 0], [0, 1, 0], [0, 0, 1]])
+
+    # calculate macro percision
+    precision = nn.calculate_macro_precision(y, pred)
+
+    assert precision == 0.5
+
+
 def test_abs_loss():
+    # Create new model instance
     nn = NeuralNetwork(file=None, layer_structure=[4, 10, 10, 1], learning_rate=0.0002, activation='sigmoid')
     y = np.array([[0, 1, 0, 0]])
     pred = np.array([[0.05, 0.85, 0.1, 0.1]])
+
+    # calculate loss
     abs_loss = nn.calculate_abs_loss(y, pred)
     expeced = pred - y
+
     assert (abs_loss == expeced).all()

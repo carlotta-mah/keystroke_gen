@@ -67,6 +67,7 @@ def fit_with_keystroke_data():
 
 
 if __name__ == "__main__":
+    # This file is used to run the network
     # save keystroke data in dataset
     data_processor = KeystrokeDataReader()
     keystroke_df = data_processor.read_keystroke_data('../data/Keystrokes/files/*_keystrokes.txt', 1000)

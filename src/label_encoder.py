@@ -2,6 +2,7 @@ import numpy as np
 
 
 class KeystrokeLabelEncoder:
+    '''Custom keystroke encoder that implements the label encoder interface'''
     def __init__(self):
         self.label_map = {}
         self.inverse_label_map = {}
