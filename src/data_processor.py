@@ -31,9 +31,9 @@ class KeystrokeDataReader:
         grouped_ks_data = sentence_ks_data.groupby('PARTICIPANT_ID')
 
         # for each series in groupby, take the first 10 sentences
-        train_sentence_ks_data, classify_ks_data = grouped_ks_data.head(10).reset_index(
+        train_sentence_ks_data, classify_ks_data = grouped_ks_data.head(train_split).reset_index(
             drop=True), grouped_ks_data.tail(
-            -10).reset_index(drop=True)
+            -train_split).reset_index(drop=True)
         train_dataset, classify_dataset = (
             KeystrokeDataset(train_sentence_ks_data.drop(columns=['PARTICIPANT_ID'], axis=1).values,
                              train_sentence_ks_data['PARTICIPANT_ID'].values),
